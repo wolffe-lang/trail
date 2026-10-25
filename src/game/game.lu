@@ -221,6 +221,7 @@ fn state_text(s: sim.State) -> str {
     while i < s.length {
         let w = sim.wolf(s, i)
         value += "wolf {w.x} {w.y} {w.heading}\n"
+        value += "gait {i} {sim.gait_distance(s, i)}\n"
         i += 1
     }
     for m in s.meat { value += "meat {m.x} {m.y}\n" }
@@ -286,6 +287,10 @@ fn study_run(o: Options) -> int {
             region scratch {
                 let g = art.study(o.seed, size, if size == 80 then 24 else 60, t)
                 headless.write_frame(o.dump, "sheet-{size}-{tier.name(t)}", g) else |_| { return 2 }
+                let props = art.study_props(o.seed, size, if size == 80 then 24 else 60, t)
+                headless.write_frame(o.dump, "props-{size}-{tier.name(t)}", props) else |_| {
+                    return 2
+                }
             }
         }
     }
@@ -307,6 +312,7 @@ fn bench_run(o: Options) -> int {
             // Different bounded moving scene each frame, including twenty wolves.
             s.wolves[s.front].heading = if i % 2 == 0 then 4 else 1
             s.eagle_age = i % 29
+            for k in 0..s.length { s.gaits[k] = i }
             let start = clock.now_ns()
             let next = art.frame(s, o.cols, o.rows, o.glyph_tier)
             var out = List[byte]()

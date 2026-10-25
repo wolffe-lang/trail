@@ -7,7 +7,7 @@ use input
 pub struct Wolf { x: int, y: int, heading: int }
 
 /// One meal's summoned wolf, interpolated from an edge toward the moving tail.
-pub struct Runner { x: int, y: int, age: int, active: bool }
+pub struct Runner { x: int, y: int, age: int, active: bool, px: int, py: int, distance: int }
 
 /// A reproducible run. Storage is allocated once and bounded by field area.
 pub struct State {
@@ -17,6 +17,7 @@ pub struct State {
     cols: int,
     rows: int,
     wolves: List[Wolf],
+    gaits: List[int],
     front: int,
     length: int,
     heading: int,
@@ -123,6 +124,7 @@ pub fn new(seed: int, cols: int, rows: int, playing: bool) -> State {
     assert(cols >= 2 && rows >= 2 && cols * rows <= 4096, "field dimensions")
     let normalized = wrap(seed, 2147483646) + 1
     var wolves = List[Wolf]()
+    var gaits = List[int]()
     var runners = List[Runner]()
     var holds = List[input.Hold]()
     var rolls = List[int]()
@@ -130,7 +132,8 @@ pub fn new(seed: int, cols: int, rows: int, playing: bool) -> State {
     var i = 0
     while i < cols * rows {
         (mut wolves).push(Wolf { x: cols / 2, y: rows / 2, heading: 4 })
-        (mut runners).push(Runner { x: 0, y: 0, age: 0, active: false })
+        (mut runners).push(Runner { x: 0, y: 0, age: 0, active: false, px: 0, py: 0, distance: 0 })
+        (mut gaits).push(0)
         i += 1
     }
     for _k in 0..4 { (mut holds).push(input.hold_new()); (mut wraps).push(0) }
@@ -142,6 +145,7 @@ pub fn new(seed: int, cols: int, rows: int, playing: bool) -> State {
         cols: cols,
         rows: rows,
         wolves: wolves,
+        gaits: gaits,
         front: 0,
         length: 1,
         heading: 4,
@@ -188,6 +192,9 @@ pub fn summon(mut s: State) {
                 y: if edge == 2 then -2 else if edge == 3 then s.rows + 1 else y,
                 age: 0,
                 active: true,
+                px: (if edge == 0 then -2 else if edge == 1 then s.cols + 1 else x) * 256,
+                py: (if edge == 2 then -2 else if edge == 3 then s.rows + 1 else y) * 256,
+                distance: 0,
             }
             return
         }
@@ -252,9 +259,13 @@ pub fn advance(mut s: State) {
     if raw_x >= s.cols { s.wraps[3] += 1 }
     if raw_y < 0 { s.wraps[0] += 1 }
     if raw_y >= s.rows { s.wraps[1] += 1 }
+    for k in 0..s.length { s.gaits[k] += 1 }
     s.front = wrap(s.front - 1, s.wolves.len)
     s.wolves[s.front] = Wolf { x: x, y: y, heading: s.heading }
     if join >= 0 {
+        s.runners[join].distance += magnitude(tail.x * 256 - s.runners[join].px) +
+            magnitude(tail.y * 256 - s.runners[join].py)
+        s.gaits[s.length] = s.runners[join].distance / 256
         s.length += 1
         s.runners[join].active = false
         s.wolves[(s.front + s.length - 1) % s.wolves.len] = tail
@@ -356,6 +367,7 @@ pub fn step(mut s: State, keys: List[int]) {
         }
         s.credit += pace(s.length)
         if s.credit >= 120 { s.credit -= 120; advance(mut s) }
+        if s.phase == 1 { run_in(mut s) }
     }
     s.tick += 1
 }
@@ -368,7 +380,7 @@ pub fn restart(mut s: State) {
     s.length = 1
     s.heading = 4
     s.wolves[0] = Wolf { x: s.cols / 2, y: s.rows / 2, heading: 4 }
-    for i in 0..s.runners.len { s.runners[i].active = false }
+    for i in 0..s.runners.len { s.runners[i].active = false; s.gaits[i] = 0 }
     for i in 0..4 { s.holds[i] = input.hold_new(); s.wraps[i] = 0 }
     (mut s.meat).reset()
     s.age = 0
@@ -387,4 +399,29 @@ pub fn restart(mut s: State) {
     s.roll_count = 0
     s.death = 0
     refill(mut s)
+}
+
+fn magnitude(value: int) -> int { if value < 0 then -value else value }
+
+// Positions in 1/256 logical cells. Gait counts actual travelled distance,
+// not elapsed animation ticks; a moving tail may change the approach line.
+fn run_in(mut s: State) {
+    let tail = wolf(s, s.length - 1)
+    for i in 0..s.runners.len {
+        if s.runners[i].active {
+            let progress = if s.runners[i].age > 24 then 24 else s.runners[i].age
+            let x = s.runners[i].x * 256 + (tail.x - s.runners[i].x) * 256 * progress / 24
+            let y = s.runners[i].y * 256 + (tail.y - s.runners[i].y) * 256 * progress / 24
+            s.runners[i].distance += magnitude(x - s.runners[i].px) + magnitude(y - s.runners[i].py)
+            s.runners[i].px = x
+            s.runners[i].py = y
+        }
+    }
+}
+
+/// Wolf i's distance in cells; only an accepted movement advances the gait.
+/// Newcomers retain their accumulated approach distance when they join.
+pub fn gait_distance(s: State, i: int) -> int {
+    assert(i >= 0 && i < s.length, "gait index")
+    s.gaits[i]
 }

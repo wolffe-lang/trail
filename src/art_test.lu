@@ -5,32 +5,66 @@ use sprites
 use tier
 
 fn test_wolf_is_one_rotated_silhouette_and_four_legs() {
-    assert(sprites.north(0, 1) && sprites.north(4, 1) && sprites.north(0, 3) && sprites.north(4, 3))
-    assert(sprites.north(2, 0) && sprites.north(2, 2))
-    for h in 1..5 {
-        var pixels = 0
+    for distance in 0..8 {
+        var feet = 0
+        var tail = 0
         for y in 0..5 {
             for x in 0..5 {
-                if sprites.pixel(x, y, h) { pixels += 1 }
-                let rotated = if h == 1 {
-                    sprites.north(x, y)
-                } else if h == 2 {
-                    sprites.north(4 - x, 4 - y)
-                } else if h == 3 {
-                    sprites.north(4 - y, x)
-                } else {
-                    sprites.north(y, 4 - x)
-                }
-                assert(sprites.pixel(x, y, h) == rotated)
+                let kind = sprites.north(x, y, distance)
+                if kind == 4 { feet += 1 }
+                if kind == 5 { tail += 1 }
             }
         }
-        assert(pixels == 17)
-        for y in 0..3 {
-            for x in 0..5 {
-                assert(
-                    (sprites.wolf_cell(x, y, h, tier.PLAIN) == 0) ==
-                        (sprites.wolf_cell(x, y, h, tier.RICH) == 0),
-                )
+        assert(feet == 4 && tail == 1)
+        assert(sprites.north(2, 0, distance) == 2 && sprites.north(1, 1, distance) == 3)
+        for h in 1..5 {
+            for y in 0..5 {
+                for x in 0..5 {
+                    let rotated = if h == 1 {
+                        sprites.north(x, y, distance)
+                    } else if h == 2 {
+                        sprites.north(4 - x, 4 - y, distance)
+                    } else if h == 3 {
+                        sprites.north(4 - y, x, distance)
+                    } else {
+                        sprites.north(y, 4 - x, distance)
+                    }
+                    assert(sprites.part(x, y, h, distance) == rotated)
+                }
+            }
+            for y in 0..3 {
+                for x in 0..5 {
+                    assert(
+                        (sprites.wolf_cell(x, y, h, distance, tier.PLAIN) == 0) ==
+                            (sprites.wolf_cell(x, y, h, distance, tier.RICH) == 0),
+                    )
+                }
+            }
+        }
+    }
+}
+
+fn test_four_distinct_contact_frames_and_tail_stride_pair() {
+    assert(sprites.north(1, 4, 0) == 5 && sprites.north(3, 4, 4) == 5)
+    for h in 1..5 {
+        for t in 0..2 {
+            for a in 0..4 {
+                for b in 0..4 {
+                    if a != b {
+                        var changes = 0
+                        for y in 0..3 {
+                            for x in 0..5 {
+                                if sprites.wolf_cell(x, y, h, a, t) !=
+                                    sprites.wolf_cell(x, y, h, b, t) {
+                                    changes += 1
+                                }
+                            }
+                        }
+                        assert(changes > 0)
+                    }
+                }
+                assert(sprites.tail_phase(a) == 0 && sprites.tail_phase(a + 4) == 1)
+                assert(sprites.leg_phase(a) == sprites.leg_phase(a + 4))
             }
         }
     }
@@ -58,8 +92,8 @@ fn test_frame_plain_footprints_meat_and_leader() {
     assert(grid.plain_ok(g))
     var a = art.floor(7, 80, 24, tier.RICH)
     var b = art.floor(7, 80, 24, tier.RICH)
-    sprites.wolf(mut a, 5, 5, 4, true, false, tier.RICH)
-    sprites.wolf(mut b, 5, 5, 4, false, false, tier.RICH)
+    sprites.wolf(mut a, 5, 5, 4, 0, true, false, tier.RICH)
+    sprites.wolf(mut b, 5, 5, 4, 0, false, false, tier.RICH)
     assert(grid.at(a, 6, 7).fg != grid.at(b, 6, 7).fg)
     sprites.meat(mut a, 10, 10, tier.RICH)
     assert(grid.at(a, 10, 10).cp == 9608 && grid.at(a, 10, 11).fg == 196)

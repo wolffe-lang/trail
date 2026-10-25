@@ -137,6 +137,7 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
             top + w.y * 3,
             left + w.x * 5,
             if i == 0 then s.heading else w.heading,
+            sim.gait_distance(s, i),
             i == 0,
             false,
             t,
@@ -147,19 +148,18 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
         let tail = sim.wolf(s, s.length - 1)
         for r in s.runners {
             if r.active {
-                let progress = if r.age > 24 then 24 else r.age
-                let x = r.x * 5 + (tail.x * 5 - r.x * 5) * progress / 24
-                let y = r.y * 3 + (tail.y * 3 - r.y * 3) * progress / 24
-                let heading = if tail.x * 5 > x {
+                let x = r.px * 5 / 256
+                let y = r.py * 3 / 256
+                let heading = if tail.x * 256 > r.px {
                     4
-                } else if tail.x * 5 < x {
+                } else if tail.x * 256 < r.px {
                     3
-                } else if tail.y * 3 > y {
+                } else if tail.y * 256 > r.py {
                     2
                 } else {
                     1
                 }
-                sprites.wolf(mut g, top + y, left + x, heading, false, true, t)
+                sprites.wolf(mut g, top + y, left + x, heading, r.distance / 256, false, true, t)
             }
         }
     }
@@ -228,20 +228,30 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
     g
 }
 
-/// Original sprite study, both tiers and both required field sizes.
+/// Original wolf study: every heading crossed with all four contact poses,
+/// plus the opposite tail sway. Both tiers use the same footprint and count.
 pub fn study(seed: int, cols: int, rows: int, t: int) -> grid.Grid {
     var g = floor(seed, cols, rows, t)
-    text(mut g, 0, 1, "TRAIL / solid silhouettes / {tier.name(t)}", t, true)
+    text(mut g, 0, 1, "TRAIL / distance-driven trot / {tier.name(t)}", t, true)
     for h in 1..5 {
-        let x = 3 + (h - 1) * 17
-        text(mut g, 2, x, "heading {h}", t, false)
-        sprites.wolf(mut g, 4, x, h, true, false, t)
-        sprites.wolf(mut g, 8, x, h, false, false, t)
-        sprites.wolf(mut g, 12, x, h, false, true, t)
+        let x = 3 + (h - 1) * 18
+        for f in 0..4 {
+            text(mut g, 2 + f * 4, x, "H{h} contact {f}", t, false)
+            sprites.wolf(mut g, 3 + f * 4, x, h, f, f == 0, f == 3, t)
+        }
+        text(mut g, 18, x, "H{h} tail sway", t, false)
+        sprites.wolf(mut g, 19, x, h, 4, false, false, t)
     }
-    text(mut g, 16, 2, "meat       eagle          sliding shadow", t, false)
-    sprites.meat(mut g, 18, 3, t)
-    sprites.eagle(mut g, 18, 16, t)
-    sprites.shadow(mut g, 19, 34, t)
+    g
+}
+
+/// Props companion keeps meat/eagle/shadow visible beside the gait study.
+pub fn study_props(seed: int, cols: int, rows: int, t: int) -> grid.Grid {
+    var g = floor(seed, cols, rows, t)
+    text(mut g, 1, 2, "TRAIL / meat, eagle and sliding shadow / {tier.name(t)}", t, true)
+    text(mut g, 5, 2, "meat       eagle          shadow", t, false)
+    sprites.meat(mut g, 8, 3, t)
+    sprites.eagle(mut g, 8, 16, t)
+    sprites.shadow(mut g, 9, 34, t)
     g
 }

@@ -221,3 +221,53 @@ fn test_card_start_keys_enter_gameplay_without_pausing() {
         }
     }
 }
+
+fn test_leg_phase_tracks_cells_not_ticks_and_pause_freezes_run_in() {
+    var s = sim.new(7, 16, 7, true)
+    for _tick in 0..7 { sim.step(mut s, List[int]()) }
+    assert(sim.gait_distance(s, 0) == 0)
+    sim.step(mut s, List[int]())
+    assert(sim.gait_distance(s, 0) == 1)
+    sim.summon(mut s)
+    sim.step(mut s, List[int]())
+    assert(s.runners[0].distance > 0)
+    let runner_distance = s.runners[0].distance
+    let runner_x = s.runners[0].px
+    let runner_y = s.runners[0].py
+    let gait = sim.gait_distance(s, 0)
+    var pause = List[int]()
+    (mut pause).push(5)
+    sim.step(mut s, pause)
+    for _tick in 0..30 { sim.step(mut s, List[int]()) }
+    assert(sim.gait_distance(s, 0) == gait)
+    assert(
+        s.runners[0].distance == runner_distance &&
+            s.runners[0].px == runner_x &&
+            s.runners[0].py == runner_y,
+    )
+    sim.step(mut s, pause)
+    for _tick in 0..30 { sim.step(mut s, List[int]()) }
+    assert(s.length == 2 && sim.gait_distance(s, 1) > 0)
+    let first = sim.gait_distance(s, 0)
+    let second = sim.gait_distance(s, 1)
+    sim.advance(mut s)
+    assert(sim.gait_distance(s, 0) == first + 1 && sim.gait_distance(s, 1) == second + 1)
+    // Crossing a seam is still one cell, never the whole board's width.
+    place(mut s, 15, 3, 4)
+    let before = sim.gait_distance(s, 0)
+    sim.advance(mut s)
+    assert(sim.wolf(s, 0).x == 0 && sim.gait_distance(s, 0) == before + 1)
+}
+
+fn test_runner_arrival_keeps_final_contact_phase() {
+    var s = sim.new(7, 16, 7, true)
+    sim.summon(mut s)
+    let tail = sim.wolf(s, 0)
+    s.runners[0].age = 24
+    s.runners[0].px = tail.x * 256 - 128
+    s.runners[0].py = tail.y * 256
+    s.runners[0].distance = 896
+    sim.advance(mut s)
+    assert(s.length == 2 && !s.runners[0].active)
+    assert(s.runners[0].distance == 1024 && sim.gait_distance(s, 1) == 4)
+}

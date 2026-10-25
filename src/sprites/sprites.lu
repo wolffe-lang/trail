@@ -1,48 +1,81 @@
-//! Original solid-block silhouettes. One five-by-five pixel wolf is rotated
-//! before packing vertical pixel pairs into the five-by-three cell footprint.
+//! Original long-bodied wolf and four-frame distance-driven trot, in the
+//! existing five-by-three cell footprint. Pack's gait is a reference only.
 
 use grid
 use tier
 
-/// Occupancy in the north-facing wolf: head, body, four lateral legs, tail.
-pub fn north(x: int, y: int) -> bool {
-    if x < 0 || x > 4 || y < 0 || y > 4 { return false }
-    if y == 0 { return x >= 1 && x <= 3 }
-    if y == 1 || y == 3 { return true }
-    if y == 2 { return x >= 1 && x <= 3 }
-    x == 2
+/// Four contact poses, advanced once per logical cell travelled.
+pub fn leg_phase(distance: int) -> int { distance % 4 }
+
+/// One left/right tail-sway cycle spans a pair of four-contact strides.
+pub fn tail_phase(distance: int) -> int { distance / 4 % 2 }
+
+/// North-facing semantic pixel: 0 empty, 1 solid torso, 2 forward head,
+/// 3 ears, 4 four separate feet, 5 tail. One original shape, not four sheets.
+pub fn north(x: int, y: int, distance: int) -> int {
+    if x < 0 || x > 4 || y < 0 || y > 4 { return 0 }
+    let f = leg_phase(distance)
+    let fore_left = if f == 0 then 0 else if f == 2 then 2 else 1
+    let fore_right = if f == 1 then 2 else if f == 3 then 0 else 1
+    let hind_left = if f == 0 || f == 3 then 4 else 3
+    let hind_right = if f == 1 || f == 2 then 4 else 3
+    if x == 0 && (y == fore_left || y == hind_left) ||
+        x == 4 && (y == fore_right || y == hind_right) {
+        return 4
+    }
+    if y == 4 && x == (if tail_phase(distance) == 0 then 1 else 3) { return 5 }
+    if x == 2 && y == 0 { return 2 }
+    if x == 2 && y == 1 { return 1 }
+    if y == 1 && (x == 1 || x == 3) { return 3 }
+    if (y == 2 || y == 3) && (x == 1 || x == 2) { return 1 }
+    0
 }
 
-/// Rotate the same silhouette to a heading; padding row six stays empty.
-pub fn pixel(x: int, y: int, heading: int) -> bool {
-    if y > 4 { return false }
-    if heading == 2 { return north(4 - x, 4 - y) }
-    if heading == 3 { return north(4 - y, x) }
-    if heading == 4 { return north(y, 4 - x) }
-    north(x, y)
+/// Rotate all parts together, including feet, ears, head and tail.
+pub fn part(x: int, y: int, heading: int, distance: int) -> int {
+    if x < 0 || x > 4 || y < 0 || y > 4 { return 0 }
+    if heading == 2 { return north(4 - x, 4 - y, distance) }
+    if heading == 3 { return north(4 - y, x, distance) }
+    if heading == 4 { return north(y, 4 - x, distance) }
+    north(x, y, distance)
 }
 
-/// One cell from two pixels, or transparent zero. Plain has the same mask.
-pub fn wolf_cell(x: int, y: int, heading: int, t: int) -> int {
-    let top = pixel(x, y * 2, heading)
-    let bottom = pixel(x, y * 2 + 1, heading)
-    if !top && !bottom { return 0 }
+/// One cell from two solid pixels. Both tiers have the same occupancy;
+/// plain feet carry four distinct contact marks instead of half-blocks.
+pub fn wolf_cell(x: int, y: int, heading: int, distance: int, t: int) -> int {
+    let top = part(x, y * 2, heading, distance)
+    let bottom = part(x, y * 2 + 1, heading, distance)
+    if top == 0 && bottom == 0 { return 0 }
     if t == tier.PLAIN {
-        if heading == 1 && x == 2 && y == 0 { return 94 }
-        if heading == 2 && x == 2 && y == 2 { return 118 }
-        if heading == 3 && x == 0 && y == 1 { return 60 }
-        if heading == 4 && x == 4 && y == 1 { return 62 }
+        if top == 2 || bottom == 2 {
+            return if heading == 1 {
+                94
+            } else if heading == 2 {
+                118
+            } else if heading == 3 {
+                60
+            } else {
+                62
+            }
+        }
+        if (top == 4 || bottom == 4) && (top == 0 || top == 4) && (bottom == 0 || bottom == 4) {
+            let f = leg_phase(distance)
+            return if f == 0 then 47 else if f == 1 then 124 else if f == 2 then 92 else 95
+        }
+        if top == 5 || bottom == 5 { return 126 }
         return 35
     }
-    if top && bottom then 9608 else if top then 9600 else 9604
+    if top != 0 && bottom != 0 then 9608 else if top != 0 then 9600 else 9604
 }
 
-/// Draw five by three cells; the leader has a bright, bold coat, runners gold.
+/// Original long torso, forward head, ears, feet and swaying tail. Never
+/// exceeds five by three; leader bright/bold, followers grey, newcomers gold.
 pub fn wolf(
     mut g: grid.Grid,
     row: int,
     col: int,
     heading: int,
+    distance: int,
     leader: bool,
     runner: bool,
     t: int,
@@ -52,7 +85,7 @@ pub fn wolf(
     } else if runner then 179 else if leader then 231 else 247
     for y in 0..3 {
         for x in 0..5 {
-            let cp = wolf_cell(x, y, heading, t)
+            let cp = wolf_cell(x, y, heading, distance, t)
             if cp != 0 {
                 let old = grid.at(g, row + y, col + x)
                 grid.put(
