@@ -1,0 +1,139 @@
+test src/art_test.lu::test_wolf_body_bar_and_four_separated_leg_columns ... ok
+test src/art_test.lu::test_four_contact_frames_move_diagonal_pairs_without_hiding_feet ... ok
+test src/art_test.lu::test_oriented_sprite_envelope_matches_collision_cell ... ok
+test src/art_test.lu::test_floor_is_visible_soil_with_seeded_rocks_on_both_tiers ... ok
+test src/art_test.lu::test_frame_plain_footprints_meat_and_leader ... ok
+test src/art_test.lu::test_south_is_generated_vertical_mirror_of_north ... ok
+test src/art_test.lu::test_top_down_legs_both_sides_and_head_front ... ok
+test src/clock/clock_test.lu::test_no_tick_before_its_time ... ok
+test src/clock/clock_test.lu::test_one_tick_on_time ... ok
+test src/clock/clock_test.lu::test_late_frames_drop_renders_not_ticks ... ok
+test src/clock/clock_test.lu::test_ms_until_rounds_up ... ok
+test src/clock/clock_test.lu::test_thirty_ticks_a_second ... ok
+test src/grid/grid_test.lu::test_empty_diff_writes_nothing ... ok
+test src/grid/grid_test.lu::test_one_cell_diff ... ok
+test src/grid/grid_test.lu::test_full_repaint_is_contiguous ... ok
+test src/grid/grid_test.lu::test_style_run_sets_sgr_once ... ok
+test src/grid/grid_test.lu::test_rgb_dialect ... ok
+test src/grid/grid_test.lu::test_sixteen_dialect_bright ... ok
+test src/grid/grid_test.lu::test_utf8_lengths ... ok
+test src/grid/grid_test.lu::test_property_apply_diff_equals_next ... ok
+test src/grid/grid_test.lu::test_property_holds_in_the_rgb_dialect ... ok
+test src/grid/grid_test.lu::test_model_wraps_and_scrolls ... ok
+test src/grid/grid_test.lu::test_model_private_modes ... ok
+test src/grid/grid_test.lu::test_model_malformed_utf8 ... ok
+test src/grid/grid_test.lu::test_dump_text_and_styles ... ok
+test src/grid/grid_test.lu::test_plain_ok ... ok
+test src/grid/grid_test.lu::test_bounds_are_soft ... ok
+test src/input/input_test.lu::test_csi_arrows ... ok
+test src/input/input_test.lu::test_ss3_arrows ... ok
+test src/input/input_test.lu::test_shift_arrows_are_their_own_keys ... ok
+test src/input/input_test.lu::test_other_modifiers_are_the_bare_arrow ... ok
+test src/input/input_test.lu::test_plain_keys ... ok
+test src/input/input_test.lu::test_lone_esc_waits_for_the_timeout ... ok
+test src/input/input_test.lu::test_esc_then_bracket_late_is_still_a_sequence ... ok
+test src/input/input_test.lu::test_esc_then_plain_byte_is_esc_and_the_byte ... ok
+test src/input/input_test.lu::test_ignored_forms ... ok
+test src/input/input_test.lu::test_unknown_bytes_are_dropped_and_counted ... ok
+test src/input/input_test.lu::test_two_sequences_in_one_read ... ok
+test src/input/input_test.lu::test_a_tap_holds_for_the_tap_ticks ... ok
+test src/input/input_test.lu::test_a_repeat_run_releases_one_interval_after_the_last_press ... ok
+test src/replay/replay_test.lu::test_vocabulary ... ok
+test src/replay/replay_test.lu::test_parse_sample ... ok
+test src/replay/replay_test.lu::test_round_trip ... ok
+test src/replay/replay_test.lu::test_refusals ... ok
+test src/replay/replay_test.lu::test_parse_size ... ok
+test src/replay/replay_test.lu::test_start_is_read_written_and_defaults_to_zero ... ok
+test src/replay/replay_test.lu::test_the_score_comment_is_written_read_and_optional ... ok
+test src/sim_test.lu::test_wrap_all_four_edges_both_axes ... ok
+test src/sim_test.lu::test_reverse_refused_and_fast_double_turn_refused ... ok
+test src/sim_test.lu::test_summons_arrives_at_departing_tail ... ok
+test src/sim_test.lu::test_running_newcomer_is_immune_to_eagle ... ok
+d20: 3403/10000 hits; expected 3350..3650; bins [497, 459, 499, 521, 471, 482, 474, 490, 504, 525, 503, 479, 542, 536, 477, 522, 486, 509, 497, 527]
+test src/sim_test.lu::test_d20_distribution_10000_seeded_strikes ... ok
+test src/sim_test.lu::test_pack_of_one_death_and_miss ... ok
+test src/sim_test.lu::test_meat_eating_and_open_placement ... ok
+test src/sim_test.lu::test_pace_and_cadence_and_first_eagle ... ok
+test src/sim_test.lu::test_telegraph_lasts_30_ticks_and_exit_18 ... ok
+test src/sim_test.lu::test_self_collision_and_departing_tail ... ok
+test src/sim_test.lu::test_pause_and_seed_determinism ... ok
+test src/sim_test.lu::test_same_tick_turn_order_and_retry ... ok
+test src/sim_test.lu::test_card_start_keys_enter_gameplay_without_pausing ... ok
+test src/sim_test.lu::test_leg_phase_tracks_cells_not_ticks_and_pause_freezes_run_in ... ok
+test src/sim_test.lu::test_runner_arrival_keeps_final_contact_phase ... ok
+test src/world/world_test.lu::test_deterministic ... ok
+test src/world/world_test.lu::test_seeds_differ ... ok
+test src/world/world_test.lu::test_noise_bounds_and_continuity ... ok
+test src/world/world_test.lu::test_forest_density_rises ... ok
+test src/world/world_test.lu::test_clearing_reads_and_a_stand_is_the_woods_with_more_trunks ... ok
+test src/world/world_test.lu::test_density_bands_are_ordered ... ok
+test src/world/world_test.lu::test_hash_range ... ok
+wolf test: 69 passed; 0 failed; 0 rejected; 0 unsupported; 0 filtered out
+test: 0 SKIP lines
+build: target/native/trail
+build: target/release/trail
+goldens: wrote tests/goldens/death-200-rich
+goldens: wrote tests/goldens/death-200-plain
+goldens: wrote tests/goldens/death-80-rich
+goldens: wrote tests/goldens/death-80-plain
+goldens: wrote tests/goldens/hit-200-rich
+goldens: wrote tests/goldens/hit-200-plain
+goldens: wrote tests/goldens/hit-80-rich
+goldens: wrote tests/goldens/hit-80-plain
+goldens: wrote tests/goldens/miss-200-rich
+goldens: wrote tests/goldens/miss-200-plain
+goldens: wrote tests/goldens/miss-80-rich
+goldens: wrote tests/goldens/miss-80-plain
+trail: verified score 1200
+goldens: wrote tests/goldens/natural-200-rich
+trail: verified score 1200
+goldens: wrote tests/goldens/natural-200-plain
+goldens: wrote tests/goldens/one-200-rich
+goldens: wrote tests/goldens/one-200-plain
+goldens: wrote tests/goldens/one-80-rich
+goldens: wrote tests/goldens/one-80-plain
+goldens: wrote tests/goldens/stride-down-200-rich
+goldens: wrote tests/goldens/stride-down-200-plain
+goldens: wrote tests/goldens/stride-down-80-rich
+goldens: wrote tests/goldens/stride-down-80-plain
+goldens: wrote tests/goldens/stride-left-200-rich
+goldens: wrote tests/goldens/stride-left-200-plain
+goldens: wrote tests/goldens/stride-left-80-rich
+goldens: wrote tests/goldens/stride-left-80-plain
+goldens: wrote tests/goldens/stride-right-200-rich
+goldens: wrote tests/goldens/stride-right-200-plain
+goldens: wrote tests/goldens/stride-right-80-rich
+goldens: wrote tests/goldens/stride-right-80-plain
+goldens: wrote tests/goldens/stride-up-200-rich
+goldens: wrote tests/goldens/stride-up-200-plain
+goldens: wrote tests/goldens/stride-up-80-rich
+goldens: wrote tests/goldens/stride-up-80-plain
+goldens: wrote tests/goldens/summons-200-rich
+goldens: wrote tests/goldens/summons-200-plain
+goldens: wrote tests/goldens/summons-80-rich
+goldens: wrote tests/goldens/summons-80-plain
+goldens: wrote tests/goldens/telegraph-200-rich
+goldens: wrote tests/goldens/telegraph-200-plain
+goldens: wrote tests/goldens/telegraph-80-rich
+goldens: wrote tests/goldens/telegraph-80-plain
+goldens: wrote tests/goldens/title-200-rich
+goldens: wrote tests/goldens/title-200-plain
+goldens: wrote tests/goldens/title-80-rich
+goldens: wrote tests/goldens/title-80-plain
+goldens: wrote tests/goldens/wrap-down-200-rich
+goldens: wrote tests/goldens/wrap-down-200-plain
+goldens: wrote tests/goldens/wrap-down-80-rich
+goldens: wrote tests/goldens/wrap-down-80-plain
+goldens: wrote tests/goldens/wrap-left-200-rich
+goldens: wrote tests/goldens/wrap-left-200-plain
+goldens: wrote tests/goldens/wrap-left-80-rich
+goldens: wrote tests/goldens/wrap-left-80-plain
+goldens: wrote tests/goldens/wrap-right-200-rich
+goldens: wrote tests/goldens/wrap-right-200-plain
+goldens: wrote tests/goldens/wrap-right-80-rich
+goldens: wrote tests/goldens/wrap-right-80-plain
+goldens: wrote tests/goldens/wrap-up-200-rich
+goldens: wrote tests/goldens/wrap-up-200-plain
+goldens: wrote tests/goldens/wrap-up-80-rich
+goldens: wrote tests/goldens/wrap-up-80-plain
+goldens: wrote tests/goldens/art

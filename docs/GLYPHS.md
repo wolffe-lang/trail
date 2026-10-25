@@ -21,6 +21,7 @@ the engine's cursor-position-report table; each glyph should be one cell.
 | U+2597 | ▗ | opposite tail stroke |
 | U+2598 | ▘ | rotated tail |
 | U+2599 | ▙ | turned notched head |
+| U+259B | ▛ | mirrored south ear corner |
 | U+259C | ▜ | turned notched head |
 | U+259D | ▝ | rotated tail |
 | U+259F | ▟ | head with ear notch |
