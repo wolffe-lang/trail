@@ -1,0 +1,181 @@
+use sim
+
+fn place(mut s: sim.State, x: int, y: int, heading: int) {
+    s.front = 0
+    s.length = 1
+    s.heading = heading
+    s.wolves[0] = sim.Wolf { x: x, y: y, heading: heading }
+    (mut s.meat).reset()
+}
+
+fn test_wrap_all_four_edges_both_axes() {
+    var s = sim.new(7, 16, 7, true)
+    for y in 0..7 {
+        place(mut s, 0, y, 3)
+        sim.advance(mut s)
+        assert(sim.wolf(s, 0).x == 15 && sim.wolf(s, 0).y == y && sim.wolf(s, 0).heading == 3)
+        place(mut s, 15, y, 4)
+        sim.advance(mut s)
+        assert(sim.wolf(s, 0).x == 0 && sim.wolf(s, 0).y == y && sim.wolf(s, 0).heading == 4)
+    }
+    for x in 0..16 {
+        place(mut s, x, 0, 1)
+        sim.advance(mut s)
+        assert(sim.wolf(s, 0).y == 6 && sim.wolf(s, 0).x == x && sim.wolf(s, 0).heading == 1)
+        place(mut s, x, 6, 2)
+        sim.advance(mut s)
+        assert(sim.wolf(s, 0).y == 0 && sim.wolf(s, 0).x == x && sim.wolf(s, 0).heading == 2)
+    }
+}
+
+fn test_reverse_refused_and_fast_double_turn_refused() {
+    var s = sim.new(1, 16, 7, true)
+    sim.turn(mut s, 3)
+    assert(s.heading == 4)
+    sim.turn(mut s, 1)
+    assert(s.heading == 1)
+    sim.turn(mut s, 3)
+    assert(s.heading == 1)
+    sim.advance(mut s)
+    sim.turn(mut s, 3)
+    assert(s.heading == 3)
+}
+
+fn test_summons_arrives_at_departing_tail() {
+    var s = sim.new(1, 16, 7, true)
+    sim.summon(mut s)
+    assert(sim.pending(s) == 1 && s.length == 1)
+    assert(
+        s.runners[0].x < 0 ||
+            s.runners[0].x >= s.cols ||
+            s.runners[0].y < 0 ||
+            s.runners[0].y >= s.rows,
+    )
+    for _tick in 0..40 { sim.step(mut s, List[int]()) }
+    assert(s.length == 2 && sim.pending(s) == 0 && s.longest == 2)
+    let a = sim.wolf(s, 0)
+    let b = sim.wolf(s, 1)
+    assert(sim.wrap(a.x - b.x, 16) == 1 && a.y == b.y)
+}
+
+fn test_running_newcomer_is_immune_to_eagle() {
+    var s = sim.new(1, 16, 7, true)
+    sim.summon(mut s)
+    s.runners[0].age = 12
+    // Find the next seeded hit without changing the strike path.
+    while true {
+        var probe = s.roll_rng
+        if sim.hits(sim.d20(mut probe)) { break }
+        let _r = sim.d20(mut s.roll_rng)
+    }
+    sim.strike(mut s)
+    assert(s.length == 0 && s.phase == 2 && sim.pending(s) == 1 && s.runners[0].age == 12)
+}
+
+fn test_d20_distribution_10000_seeded_strikes() {
+    var seed: int = 8
+    var hits: int = 0
+    var bins = List[int]()
+    for _n in 0..20 { (mut bins).push(0) }
+    for _n in 0..10000 {
+        let roll = sim.d20(mut seed)
+        assert(roll >= 1 && roll <= 20)
+        bins[roll - 1] += 1
+        if sim.hits(roll) { hits += 1 }
+    }
+    print("d20: {hits}/10000 hits; expected 3350..3650; bins {bins}")
+    assert(hits >= 3350 && hits <= 3650)
+    for n in bins { assert(n >= 350 && n <= 650) }
+    assert(sim.hits(1) && sim.hits(7) && !sim.hits(8) && !sim.hits(20))
+}
+
+fn test_pack_of_one_death_and_miss() {
+    var s = sim.new(4, 16, 7, true)
+    while true {
+        var probe = s.roll_rng
+        if !sim.hits(sim.d20(mut probe)) { break }
+        let _r = sim.d20(mut s.roll_rng)
+    }
+    sim.strike(mut s)
+    assert(s.length == 1 && s.phase == 1 && s.survived == 1 && s.score == 25)
+    while true {
+        var probe = s.roll_rng
+        if sim.hits(sim.d20(mut probe)) { break }
+        let _r = sim.d20(mut s.roll_rng)
+    }
+    sim.strike(mut s)
+    assert(s.length == 0 && s.phase == 2 && s.death == 2)
+}
+
+fn test_meat_eating_and_open_placement() {
+    var s = sim.new(5, 16, 7, true)
+    (mut s.meat).reset()
+    let w = sim.wolf(s, 0)
+    (mut s.meat).push(sim.Wolf { x: w.x + 1, y: w.y, heading: 0 })
+    sim.advance(mut s)
+    assert(s.score == 100 && s.eaten == 1 && sim.pending(s) == 1)
+    for _n in 0..100 {
+        sim.refill(mut s)
+        for m in s.meat { assert(!sim.occupied(s, m.x, m.y)) }
+        (mut s.meat).reset()
+    }
+    s.length = 8
+    for i in 0..8 { s.wolves[(s.front + i) % s.wolves.len] = sim.Wolf { x: i, y: 0, heading: 4 } }
+    sim.refill(mut s)
+    assert(s.meat.len == 2)
+}
+
+fn test_pace_and_cadence_and_first_eagle() {
+    assert(sim.pace(1) == 16 && sim.pace(2) == 17 && sim.pace(25) == 40 && sim.pace(100) == 40)
+    var s = sim.new(5, 16, 7, true)
+    for _n in 0..100 { let t = sim.interval(mut s); assert(t >= 360 && t <= 600) }
+    assert(s.eagle_due == -1)
+    s.length = 3
+    s.wolves[1] = sim.Wolf { x: 7, y: 3, heading: 4 }
+    s.wolves[2] = sim.Wolf { x: 6, y: 3, heading: 4 }
+    sim.advance(mut s)
+    assert(s.eagle_due >= 330 && s.eagle_due <= 570)
+    s.length = 30
+    for _n in 0..100 { assert(sim.interval(mut s) >= 180) }
+}
+
+fn test_telegraph_lasts_30_ticks_and_exit_18() {
+    var s = sim.new(7, 16, 7, true)
+    s.eagle_due = 1
+    for _n in 0..29 { sim.step(mut s, List[int]()) }
+    assert(s.strikes == 0 && s.eagle_age == 29)
+    sim.step(mut s, List[int]())
+    assert(s.strikes == 1)
+    if s.phase == 1 {
+        for _n in 0..18 { sim.step(mut s, List[int]()) }
+        assert(s.eagle_age == -1)
+    }
+}
+
+fn test_self_collision_and_departing_tail() {
+    var s = sim.new(2, 16, 7, true)
+    s.length = 4
+    s.wolves[0] = sim.Wolf { x: 3, y: 3, heading: 1 }
+    s.wolves[1] = sim.Wolf { x: 3, y: 4, heading: 1 }
+    s.wolves[2] = sim.Wolf { x: 2, y: 4, heading: 4 }
+    s.wolves[3] = sim.Wolf { x: 2, y: 3, heading: 2 }
+    s.heading = 3
+    sim.advance(mut s)
+    assert(s.phase == 1)
+    s.heading = 4
+    sim.advance(mut s)
+    assert(s.phase == 2 && s.death == 1)
+}
+
+fn test_pause_and_seed_determinism() {
+    var a = sim.new(-7, 16, 7, true)
+    var b = sim.new(-7, 16, 7, true)
+    for _n in 0..180 { sim.step(mut a, List[int]()); sim.step(mut b, List[int]()) }
+    assert(a.rng == b.rng && a.length == b.length && sim.wolf(a, 0).x == sim.wolf(b, 0).x)
+    var keys = List[int]()
+    (mut keys).push(5)
+    sim.step(mut a, keys)
+    let age = a.age
+    for _n in 0..60 { sim.step(mut a, List[int]()) }
+    assert(a.age == age && a.tick == 241)
+}

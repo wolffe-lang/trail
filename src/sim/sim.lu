@@ -1,0 +1,345 @@
+//! Seeded rules only: no terminal, environment or clock. A bounded ring deque
+//! stores wolves; a runner becomes a deque member only on a movement boundary.
+
+use input
+
+/// A grid position and direction (1 north, 2 south, 3 west, 4 east).
+pub struct Wolf { x: int, y: int, heading: int }
+
+/// One meal's summoned wolf, interpolated from an edge toward the moving tail.
+pub struct Runner { x: int, y: int, age: int, active: bool }
+
+/// A reproducible run. Storage is allocated once and bounded by field area.
+pub struct State {
+    seed: int,
+    rng: int,
+    roll_rng: int,
+    cols: int,
+    rows: int,
+    wolves: List[Wolf],
+    front: int,
+    length: int,
+    heading: int,
+    runners: List[Runner],
+    meat: List[Wolf],
+    holds: List[input.Hold],
+    tick: int,
+    age: int,
+    phase: int,
+    paused: bool,
+    credit: int,
+    score: int,
+    longest: int,
+    eaten: int,
+    survived: int,
+    strikes: int,
+    eagle_due: int,
+    eagle_age: int,
+    eagle_edge: int,
+    eagle_x: int,
+    eagle_y: int,
+    last_roll: int,
+    result_age: int,
+    rolls: List[int],
+    roll_count: int,
+    death: int,
+    wraps: List[int],
+}
+
+/// Park–Miller stream, arithmetic fits signed 64 bits. Returns 1..2147483646.
+pub fn random(mut seed: int) -> int {
+    seed = seed * 48271 % 2147483647
+    seed
+}
+
+/// Unbiased d20 via rejection of the six unused generator outcomes.
+pub fn d20(mut seed: int) -> int {
+    var value = random(mut seed)
+    while value > 2147483640 { value = random(mut seed) }
+    (value - 1) % 20 + 1
+}
+
+/// 35 percent, forever: no length or score modifies this threshold.
+pub fn hits(roll: int) -> bool { roll >= 1 && roll <= 7 }
+
+/// Euclidean wrapping, keeping the heading and the other coordinate.
+pub fn wrap(value: int, span: int) -> int { (value % span + span) % span }
+
+/// Read the ith wolf from the leader (0); traps on an invalid index.
+pub fn wolf(s: State, i: int) -> Wolf {
+    assert(i >= 0 && i < s.length, "wolf index")
+    copy s.wolves[(s.front + i) % s.wolves.len]
+}
+
+/// Whether a wolf occupies this logical cell.
+pub fn occupied(s: State, x: int, y: int) -> bool {
+    var i = 0
+    while i < s.length {
+        let w = wolf(s, i)
+        if w.x == x && w.y == y { return true }
+        i += 1
+    }
+    false
+}
+
+/// Speed in quarter-cells per second: four initially, +0.25/wolf, cap ten.
+pub fn pace(length: int) -> int { if length >= 25 then 40 else 16 + length - 1 }
+
+/// Seeded cadence, seconds, shrinking once per three wolves, floor six.
+pub fn interval(mut s: State) -> int {
+    let base = 12 + random(mut s.rng) % 9 - s.length / 3
+    (if base < 6 then 6 else base) * 30
+}
+
+fn meat_at(s: State, x: int, y: int) -> bool {
+    for m in s.meat { if m.x == x && m.y == y { return true } }
+    false
+}
+
+/// Place the required meat only in open cells; full boards contain none.
+pub fn refill(mut s: State) {
+    let wanted = if s.length >= 8 then 2 else 1
+    while s.meat.len > wanted { let _old = (mut s.meat).pop() else Wolf { x: 0, y: 0, heading: 0 } }
+    while s.meat.len < wanted && s.meat.len + s.length < s.cols * s.rows {
+        let start = random(mut s.rng) % (s.cols * s.rows)
+        var i = 0
+        var placed = false
+        while i < s.cols * s.rows && !placed {
+            let n = (start + i) % (s.cols * s.rows)
+            let x = n % s.cols
+            let y = n / s.cols
+            if !occupied(s, x, y) && !meat_at(s, x, y) {
+                (mut s.meat).push(Wolf { x: x, y: y, heading: 0 })
+                placed = true
+            }
+            i += 1
+        }
+        if !placed { break }
+    }
+}
+
+/// New run; logical dimensions must be >= 2 and the area <= 4096.
+pub fn new(seed: int, cols: int, rows: int, playing: bool) -> State {
+    assert(cols >= 2 && rows >= 2 && cols * rows <= 4096, "field dimensions")
+    let normalized = wrap(seed, 2147483646) + 1
+    var wolves = List[Wolf]()
+    var runners = List[Runner]()
+    var holds = List[input.Hold]()
+    var rolls = List[int]()
+    var wraps = List[int]()
+    var i = 0
+    while i < cols * rows {
+        (mut wolves).push(Wolf { x: cols / 2, y: rows / 2, heading: 4 })
+        (mut runners).push(Runner { x: 0, y: 0, age: 0, active: false })
+        i += 1
+    }
+    for _k in 0..4 { (mut holds).push(input.hold_new()); (mut wraps).push(0) }
+    for _k in 0..16 { (mut rolls).push(0) }
+    var s = State {
+        seed: seed,
+        rng: normalized,
+        roll_rng: normalized,
+        cols: cols,
+        rows: rows,
+        wolves: wolves,
+        front: 0,
+        length: 1,
+        heading: 4,
+        runners: runners,
+        meat: List[Wolf](),
+        holds: holds,
+        tick: 0,
+        age: 0,
+        phase: if playing then 1 else 0,
+        paused: false,
+        credit: 0,
+        score: 0,
+        longest: 1,
+        eaten: 0,
+        survived: 0,
+        strikes: 0,
+        eagle_due: -1,
+        eagle_age: -1,
+        eagle_edge: 0,
+        eagle_x: 0,
+        eagle_y: 0,
+        last_roll: 0,
+        result_age: 0,
+        rolls: rolls,
+        roll_count: 0,
+        death: 0,
+        wraps: wraps,
+    }
+    refill(mut s)
+    s
+}
+
+/// Add a runner off one of four seeded edges; never a reapable pack member.
+pub fn summon(mut s: State) {
+    var i = 0
+    while i < s.runners.len {
+        if !s.runners[i].active {
+            let edge = random(mut s.rng) % 4
+            let x = random(mut s.rng) % s.cols
+            let y = random(mut s.rng) % s.rows
+            s.runners[i] = Runner {
+                x: if edge == 0 then -2 else if edge == 1 then s.cols + 1 else x,
+                y: if edge == 2 then -2 else if edge == 3 then s.rows + 1 else y,
+                age: 0,
+                active: true,
+            }
+            return
+        }
+        i += 1
+    }
+}
+
+/// Count the running newcomers separately from the reapable deque.
+pub fn pending(s: State) -> int {
+    var n = 0
+    for r in s.runners { if r.active { n += 1 } }
+    n
+}
+
+/// Turn immediately, rejecting reverse even when keys repeat; at most one
+/// corner per movement boundary prevents two fast turns reversing into self.
+pub fn turn(mut s: State, heading: int) {
+    if heading < 1 || heading > 4 { return }
+    let current = wolf(s, 0).heading
+    let opposite = if current == 1 {
+        2
+    } else if current == 2 {
+        1
+    } else if current == 3 {
+        4
+    } else {
+        3
+    }
+    if heading != opposite { s.heading = heading }
+}
+
+/// One cell movement. The departing tail is legal to enter unless a ready
+/// newcomer grows into it on this movement; joining never duplicates a cell.
+pub fn advance(mut s: State) {
+    if s.phase != 1 { return }
+    let old = wolf(s, 0)
+    let tail = wolf(s, s.length - 1)
+    var join = -1
+    var j = 0
+    while j < s.runners.len {
+        if s.runners[j].active && s.runners[j].age >= 24 && join < 0 && s.length < s.wolves.len {
+            join = j
+        }
+        j += 1
+    }
+    let raw_x = old.x + (if s.heading == 4 then 1 else if s.heading == 3 then -1 else 0)
+    let raw_y = old.y + (if s.heading == 2 then 1 else if s.heading == 1 then -1 else 0)
+    let x = wrap(raw_x, s.cols)
+    let y = wrap(raw_y, s.rows)
+    var i = 0
+    let count = if join >= 0 then s.length else s.length - 1
+    while i < count {
+        let w = wolf(s, i)
+        if x == w.x && y == w.y {
+            s.phase = 2
+            s.death = 1
+            return
+        }
+        i += 1
+    }
+    if raw_x < 0 { s.wraps[2] += 1 }
+    if raw_x >= s.cols { s.wraps[3] += 1 }
+    if raw_y < 0 { s.wraps[0] += 1 }
+    if raw_y >= s.rows { s.wraps[1] += 1 }
+    s.front = wrap(s.front - 1, s.wolves.len)
+    s.wolves[s.front] = Wolf { x: x, y: y, heading: s.heading }
+    if join >= 0 {
+        s.length += 1
+        s.runners[join].active = false
+        s.wolves[(s.front + s.length - 1) % s.wolves.len] = tail
+        if s.length > s.longest { s.longest = s.length }
+    }
+    i = 0
+    while i < s.meat.len {
+        if s.meat[i].x == x && s.meat[i].y == y {
+            s.score += 100
+            s.eaten += 1
+            summon(mut s)
+            s.meat[i] = copy s.meat[s.meat.len - 1]
+            let _m = (mut s.meat).pop() else Wolf { x: 0, y: 0, heading: 0 }
+        } else {
+            i += 1
+        }
+    }
+    refill(mut s)
+    if s.length >= 3 && s.eagle_due < 0 && s.eagle_age < 0 { s.eagle_due = s.age + interval(mut s) }
+}
+
+/// A strike targets only the deque's last wolf. Runners cannot be selected.
+pub fn strike(mut s: State) {
+    if s.phase != 1 { return }
+    s.last_roll = d20(mut s.roll_rng)
+    s.rolls[s.roll_count % 16] = s.last_roll
+    s.roll_count += 1
+    s.strikes += 1
+    s.result_age = 45
+    if hits(s.last_roll) {
+        s.length -= 1
+        if s.length == 0 { s.phase = 2; s.death = 2 }
+    } else {
+        s.survived += 1
+        s.score += 25
+    }
+    s.eagle_due = s.age + interval(mut s)
+    refill(mut s)
+}
+
+/// Pure tick over state and this tick's key stream; pause stops gameplay
+/// time, not replay time. Holds derive only from tick-stamped autorepeats.
+pub fn step(mut s: State, keys: List[int]) {
+    for key in keys {
+        if key == 8 && s.phase == 0 { s.phase = 1 }
+        if key == 5 && s.phase == 1 { s.paused = !s.paused }
+        if key >= 1 && key <= 4 && s.phase == 1 {
+            input.hold_press(mut s.holds[key - 1], s.tick)
+            turn(mut s, key)
+        }
+    }
+    if s.phase == 1 && !s.paused {
+        var latest = -1
+        var wanted = 0
+        var i = 0
+        while i < 4 {
+            if input.held(s.holds[i], s.tick) && s.holds[i].last > latest {
+                latest = s.holds[i].last
+                wanted = i + 1
+            }
+            i += 1
+        }
+        if wanted != 0 { turn(mut s, wanted) }
+        i = 0
+        while i < s.runners.len { if s.runners[i].active { s.runners[i].age += 1 }; i += 1 }
+        s.age += 1
+        if s.result_age > 0 { s.result_age -= 1 }
+        if s.eagle_due >= 0 && s.age >= s.eagle_due && s.eagle_age < 0 {
+            s.eagle_age = 0
+            s.eagle_edge = random(mut s.rng) % 4
+            let tail = wolf(s, s.length - 1)
+            s.eagle_x = tail.x
+            s.eagle_y = tail.y
+        }
+        if s.eagle_age >= 0 {
+            s.eagle_age += 1
+            if s.eagle_age <= 30 {
+                let tail = wolf(s, s.length - 1)
+                s.eagle_x = tail.x
+                s.eagle_y = tail.y
+            }
+            if s.eagle_age == 30 { strike(mut s) }
+            if s.eagle_age >= 48 { s.eagle_age = -1 }
+        }
+        s.credit += pace(s.length)
+        if s.credit >= 120 { s.credit -= 120; advance(mut s) }
+    }
+    s.tick += 1
+}
