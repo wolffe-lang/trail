@@ -536,7 +536,7 @@ pub fn run() -> int {
     if args.len == 1 && args[0] == "--selftest" { return selftest() }
     if args.len == 1 && (args[0] == "--help" || args[0] == "-h") {
         print(
-            "trail --seed N --size WxH --plain --replay FILE --record FILE\nArrows turn; Space pauses; Enter starts; r retries; q/Esc quits. Minimum 40x12.\nHeadless: --headless --script FILE --frames N --every K --dump DIR\nArt: --art-study --dump DIR; performance: --bench --size WxH --tier rich|plain",
+            "trail --seed N --size WxH --plain --replay FILE --record FILE\nArrows turn; Space pauses; Enter or any mapped key starts/retries; q/Esc quits. Minimum 40x12.\nHeadless: --headless --script FILE --frames N --every K --dump DIR\nArt: --art-study --dump DIR; performance: --bench --size WxH --tier rich|plain",
         )
         return 0
     }

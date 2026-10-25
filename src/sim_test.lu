@@ -195,3 +195,29 @@ fn test_same_tick_turn_order_and_retry() {
     let fresh = sim.new(7, 16, 7, true)
     assert(s.rng == fresh.rng && s.meat[0].x == fresh.meat[0].x && s.meat[0].y == fresh.meat[0].y)
 }
+
+fn test_card_start_keys_enter_gameplay_without_pausing() {
+    for phase in [0, 2] {
+        for key in [1, 2, 3, 4, 5, 8, 9] {
+            var s = sim.new(7, 16, 7, false)
+            s.phase = phase
+            if phase == 2 { s.score = 500; s.death = 2 }
+            var keys = List[int]()
+            (mut keys).push(key)
+            sim.step(mut s, keys)
+            assert(s.phase == 1 && !s.paused && s.age == 1)
+            assert(s.score == 0)
+            if key >= 1 && key <= 4 {
+                assert(s.heading == key && sim.wolf(s, 0).heading == key)
+            }
+        }
+        for key in [6, 7] {
+            var s = sim.new(7, 16, 7, false)
+            s.phase = phase
+            var keys = List[int]()
+            (mut keys).push(key)
+            sim.step(mut s, keys)
+            assert(s.phase == phase && s.age == 0)
+        }
+    }
+}

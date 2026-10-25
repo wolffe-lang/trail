@@ -197,7 +197,7 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
                 "One wolf. A meal. A longer trail.",
                 "The eagle rolls a d20: 1-7 takes the tail.",
                 "The four edges are paths, not walls.",
-                "Enter to run. Arrows turn. Space pauses.",
+                "Enter or any key to run. q / Esc quits.",
                 "q / Esc leaves the trail.",
             ],
             t,
@@ -220,7 +220,7 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
                 "Score {s.score}   Longest trail {s.longest}",
                 "Eagles survived {s.survived} / {s.strikes} strikes",
                 "Last 16 rolls:{history}",
-                "r runs the same seed again. q leaves.",
+                "Enter or any key retries. q / Esc quits.",
             ],
             t,
         )

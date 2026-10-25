@@ -19,6 +19,24 @@ def title(bin,ctx):
     s.type(b'q');s.finish();ctx.common_checks(s,0,problems)
     return s,problems
 
+def title_start(bin,ctx,key):
+    s=ctx.Session([bin,'--seed','7','--trace'],24,80,ctx.env_for())
+    s.pump(.1)
+    problems=[]
+    if 'T R A I L' not in ctx.screen_text(bin,s.out):problems.append('title missing before start key')
+    s.type(key,.08)
+    first=ctx.screen_text(bin,s.out)
+    if 'T R A I L' in first:problems.append('starting key left title card visible')
+    if 'PAUSED' in first:problems.append('starting Space paused instead of starting gameplay')
+    if 'Arrows turn | Space pauses | q quits' not in first:problems.append('first gameplay controls missing')
+    if 'pack 1  score 0' not in first:problems.append('first gameplay HUD missing')
+    if b'carries_key' not in s.err:problems.append('no carrying frame for actual start key')
+    s.type(b'q');s.finish();ctx.common_checks(s,0,problems)
+    return s,problems
+
+def title_cr(bin,ctx):return title_start(bin,ctx,b'\r')
+def title_space(bin,ctx):return title_start(bin,ctx,b' ')
+
 def minimum(bin,ctx):
     s=ctx.Session([bin,'--size','40x12','--plain'],12,40,ctx.env_for())
     s.type(b'\r',.2)
@@ -58,4 +76,4 @@ def record(bin,ctx):
     if p.returncode or 'verified score' not in p.stderr:problems.append('recorded score did not verify: '+p.stderr)
     return s,problems
 
-ROWS={'title-pause':title,'minimum-40x12':minimum,'escape':escape,'resize':resize,'record-roundtrip':record}
+ROWS={'title-pause':title,'title-cr':title_cr,'title-space':title_space,'minimum-40x12':minimum,'escape':escape,'resize':resize,'record-roundtrip':record}

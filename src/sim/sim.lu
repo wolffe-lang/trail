@@ -300,11 +300,19 @@ pub fn strike(mut s: State) {
 pub fn step(mut s: State, keys: List[int]) {
     for key in keys {
         if key == 6 || key == 7 { s.tick += 1; return }
-        if key == 9 && s.phase == 2 { restart(mut s) }
     }
     var pressed = 0
     for key in keys {
-        if key == 8 && s.phase == 0 { s.phase = 1 }
+        if s.phase != 1 && (key >= 1 && key <= 5 || key == 8 || key == 9) {
+            if s.phase == 2 { restart(mut s) } else { s.phase = 1 }
+            if key >= 1 && key <= 4 {
+                // The first heading is a choice, not a reversal into a pack.
+                s.heading = key
+                s.wolves[s.front].heading = key
+            }
+            // The Space which dismisses a card must not immediately pause.
+            if key == 5 { continue }
+        }
         if key == 5 && s.phase == 1 { s.paused = !s.paused }
         if key >= 1 && key <= 4 && s.phase == 1 {
             input.hold_press(mut s.holds[key - 1], s.tick)

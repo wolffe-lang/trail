@@ -11,7 +11,7 @@
 ......▪.▪│  One wolf. A meal. A longer trail.                         │··▪·.....
 ·.·▪·.◆.·│  The eagle rolls a d20: 1-7 takes the tail.                │....··.·.
 .........│  The four edges are paths, not walls.                      │..·....·▪
-·▪·····.◆│  Enter to run. Arrows turn. Space pauses.                  │..·.···..
+·▪·····.◆│  Enter or any key to run. q / Esc quits.                   │..·.···..
 ·..·.....│  q / Esc leaves the trail.                                 │....▪.·..
 .◆.·▪▪▪..──────────────────────────────────────────────────────────────.▪.·.··▪◆
 ...▪..···....·....··......▪..····.·..◆··..·.◆.··..........··.◆◆··....·.·.·..▪.▪.
