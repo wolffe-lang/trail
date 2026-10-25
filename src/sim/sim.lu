@@ -170,6 +170,7 @@ pub fn new(seed: int, cols: int, rows: int, playing: bool) -> State {
         death: 0,
         wraps: wraps,
     }
+    (mut s.meat).reserve(2)
     refill(mut s)
     s
 }
@@ -298,11 +299,17 @@ pub fn strike(mut s: State) {
 /// time, not replay time. Holds derive only from tick-stamped autorepeats.
 pub fn step(mut s: State, keys: List[int]) {
     for key in keys {
+        if key == 6 || key == 7 { s.tick += 1; return }
+        if key == 9 && s.phase == 2 { restart(mut s) }
+    }
+    var pressed = 0
+    for key in keys {
         if key == 8 && s.phase == 0 { s.phase = 1 }
         if key == 5 && s.phase == 1 { s.paused = !s.paused }
         if key >= 1 && key <= 4 && s.phase == 1 {
             input.hold_press(mut s.holds[key - 1], s.tick)
             turn(mut s, key)
+            pressed = key
         }
     }
     if s.phase == 1 && !s.paused {
@@ -316,7 +323,7 @@ pub fn step(mut s: State, keys: List[int]) {
             }
             i += 1
         }
-        if wanted != 0 { turn(mut s, wanted) }
+        if pressed == 0 && wanted != 0 { turn(mut s, wanted) }
         i = 0
         while i < s.runners.len { if s.runners[i].active { s.runners[i].age += 1 }; i += 1 }
         s.age += 1
@@ -342,4 +349,33 @@ pub fn step(mut s: State, keys: List[int]) {
         if s.credit >= 120 { s.credit -= 120; advance(mut s) }
     }
     s.tick += 1
+}
+
+/// Retry the same seed, retaining bounded storage and the replay's tick count.
+pub fn restart(mut s: State) {
+    s.rng = wrap(s.seed, 2147483646) + 1
+    s.roll_rng = s.rng
+    s.front = 0
+    s.length = 1
+    s.heading = 4
+    s.wolves[0] = Wolf { x: s.cols / 2, y: s.rows / 2, heading: 4 }
+    for i in 0..s.runners.len { s.runners[i].active = false }
+    for i in 0..4 { s.holds[i] = input.hold_new(); s.wraps[i] = 0 }
+    (mut s.meat).reset()
+    s.age = 0
+    s.phase = 1
+    s.paused = false
+    s.credit = 0
+    s.score = 0
+    s.longest = 1
+    s.eaten = 0
+    s.survived = 0
+    s.strikes = 0
+    s.eagle_due = -1
+    s.eagle_age = -1
+    s.last_roll = 0
+    s.result_age = 0
+    s.roll_count = 0
+    s.death = 0
+    refill(mut s)
 }

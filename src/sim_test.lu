@@ -179,3 +179,20 @@ fn test_pause_and_seed_determinism() {
     for _n in 0..60 { sim.step(mut a, List[int]()) }
     assert(a.age == age && a.tick == 241)
 }
+
+fn test_same_tick_turn_order_and_retry() {
+    var s = sim.new(7, 16, 7, true)
+    var keys = List[int]()
+    (mut keys).push(1)
+    (mut keys).push(4)
+    sim.step(mut s, keys)
+    assert(s.heading == 4)
+    let tick = s.tick
+    s.phase = 2
+    s.score = 500
+    sim.summon(mut s)
+    sim.restart(mut s)
+    assert(s.tick == tick && s.phase == 1 && s.score == 0 && sim.pending(s) == 0 && s.length == 1)
+    let fresh = sim.new(7, 16, 7, true)
+    assert(s.rng == fresh.rng && s.meat[0].x == fresh.meat[0].x && s.meat[0].y == fresh.meat[0].y)
+}

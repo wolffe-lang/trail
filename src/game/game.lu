@@ -6,6 +6,8 @@ use grid
 use headless
 use input
 use replay
+use sim
+use fixtures
 use std.env
 use std.fs
 use std.io as std_io
@@ -44,7 +46,9 @@ fn vocab() -> replay.Vocab {
     for name in "none up down left right pause quit interrupt start restart".words() {
         (mut names).push(name)
     }
-    replay.vocab(take names, take List[str]())
+    var events = List[str]()
+    (mut events).push("scene")
+    replay.vocab(take names, take events)
 }
 
 fn mapped(k: int) -> int {
@@ -173,13 +177,156 @@ fn open_terminal() -> term.Term ! {io, not_tty, dumb, small} {
     }
 }
 
-fn frame(o: Options) -> grid.Grid { art.floor(o.seed, o.cols, o.rows, o.glyph_tier) }
+fn valid_size(cols: int, rows: int) -> bool {
+    cols >= 40 && rows >= 12 && cols <= 400 && rows <= 120
+}
 
-fn headless_run(o: Options) -> int {
-    fs.create_dir_all(o.dump) else |_| { return 2 }
-    let g = frame(o)
-    headless.write_frame(o.dump, "final", g) else |_| { return 2 }
+fn source_for(mut o: Options) -> replay.Replay ! {parse, io} {
+    if o.script == "" { return replay.new(o.seed, o.glyph_tier, o.cols, o.rows) }
+    let text = fs.read_text(o.script) else |_| {
+        eprint("trail: io: cannot read {o.script}")
+        return io
+    }
+    let source = replay.from_text(text, vocab()) else |_| {
+        eprint("trail: parse: invalid replay {o.script}")
+        return parse
+    }
+    if !o.seed_set { o.seed = source.seed }
+    if !o.size_set { o.cols = source.cols; o.rows = source.rows }
+    if !o.tier_set { o.glyph_tier = source.tier }
+    if !valid_size(o.cols, o.rows) {
+        eprint("trail: small: minimum 40x12, maximum 400x120")
+        return parse
+    }
+    for event in source.events {
+        if event.key == replay.EV_SIZE && !valid_size(event.cols, event.rows) {
+            eprint("trail: small: replay resize outside 40x12..400x120")
+            return parse
+        }
+        if event.key >= replay.EV_ARG && (event.arg < 1 || event.arg > 10) { return parse }
+    }
+    source
+}
+
+fn state_text(s: sim.State) -> str {
+    var value = "tick {s.tick} age {s.age} phase {s.phase} score {s.score} length {s.length} longest {s.longest} pending {sim.pending(s)} eaten {s.eaten} survived {s.survived} strikes {s.strikes} roll {s.last_roll} eagle_age {s.eagle_age}\n"
+    value += "wrap {s.wraps[0]} {s.wraps[1]} {s.wraps[2]} {s.wraps[3]}\n"
+    var i = 0
+    while i < s.length {
+        let w = sim.wolf(s, i)
+        value += "wolf {w.x} {w.y} {w.heading}\n"
+        i += 1
+    }
+    for m in s.meat { value += "meat {m.x} {m.y}\n" }
+    value
+}
+
+fn write_frame(o: Options, s: sim.State, name: str) -> () ! {io} {
+    let g = art.frame(s, o.cols, o.rows, o.glyph_tier)
+    headless.write_frame(o.dump, name, g)?
+    fs.write_text("{o.dump}/{name}.state", state_text(s)) else |_| { return io }
+}
+
+fn events(mut o: Options, mut s: sim.State, source: replay.Replay, mut keys: List[int]) {
+    let (cols, rows, scene) = replay.at(source, s.tick, mut keys)
+    if cols > 0 { o.cols = cols; o.rows = rows }
+    if scene > 0 { fixtures.scene(mut s, scene) }
+}
+
+fn stop(keys: List[int]) -> int {
+    for k in keys { if k == 6 || k == 7 { return k } }
     0
+}
+
+fn headless_run(mut o: Options) -> int {
+    let source = source_for(mut o) else |_| { return 2 }
+    if o.dump == "" { eprint("trail: --headless requires --dump DIR"); return 2 }
+    fs.create_dir_all(o.dump) else |_| { return 2 }
+    var s = sim.new(o.seed, o.cols / 5, (o.rows - 2) / 3, o.no_title)
+    var running = true
+    while s.tick < o.frames && running {
+        region scratch {
+            var keys = List[int]()
+            events(mut o, mut s, source, mut keys)
+            if o.trap_at == s.tick { assert(false, "trail: requested trap") }
+            sim.step(mut s, keys)
+            if s.tick >= o.from_tick && s.tick % o.every == 0 {
+                write_frame(o, s, "frame-{headless.pad4(s.tick)}") else |_| { return 2 }
+            }
+            running = stop(keys) == 0
+        }
+    }
+    write_frame(o, s, "final") else |_| { return 2 }
+    // A claimed score is checked only when the replay reaches its actual end.
+    let claim = if o.script != "" {
+        replay.score_of(fs.read_text(o.script) else "") else -1
+    } else {
+        -1
+    }
+    if claim >= 0 && s.tick > replay.last_tick(source) {
+        if claim != s.score {
+            eprint("trail: UNVERIFIED score {claim}, computed {s.score}")
+            return 1
+        }
+        eprint("trail: verified score {s.score}")
+    }
+    0
+}
+
+fn study_run(o: Options) -> int {
+    fs.create_dir_all(o.dump) else |_| { return 2 }
+    for size in [80, 200] {
+        for t in [tier.RICH, tier.PLAIN] {
+            region scratch {
+                let g = art.study(o.seed, size, if size == 80 then 24 else 60, t)
+                headless.write_frame(o.dump, "sheet-{size}-{tier.name(t)}", g) else |_| { return 2 }
+            }
+        }
+    }
+    0
+}
+
+fn bench_run(o: Options) -> int {
+    var s = sim.new(o.seed, o.cols / 5, (o.rows - 2) / 3, true)
+    fixtures.scene(mut s, 10)
+    var prev = grid.new(o.rows, o.cols)
+    var pen = grid.pen_new()
+    var timings = List[int]()
+    var total: int = 0
+    var maximum: int = 0
+    var frames = o.frames
+    if frames < 100 { frames = 300 }
+    for i in 0..frames {
+        region scratch {
+            // Different bounded moving scene each frame, including twenty wolves.
+            s.wolves[s.front].heading = if i % 2 == 0 then 4 else 1
+            s.eagle_age = i % 29
+            let start = clock.now_ns()
+            let next = art.frame(s, o.cols, o.rows, o.glyph_tier)
+            var out = List[byte]()
+            grid.diff(prev, next, i == 0, mut pen, mut out, tier.dialect(o.glyph_tier, false))
+            let us = (clock.now_ns() - start) / 1000
+            (mut timings).push(us)
+            total += us
+            if us > maximum { maximum = us }
+            for j in 0..prev.cells.len { prev.cells[j] = copy next.cells[j] }
+        }
+    }
+    // No dependency on a sorting library; 300 bounded samples.
+    var less99: int = 0
+    for candidate in timings {
+        var count = 0
+        for n in timings { if n <= candidate { count += 1 } }
+        if count * 100 >= frames * 99 && (less99 == 0 || candidate < less99) { less99 = candidate }
+    }
+    print(
+        "bench {o.cols}x{o.rows} {tier.name(o.glyph_tier)} frames {frames} avg_us {total / frames} p99_us {less99} max_us {maximum}",
+    )
+    0
+}
+
+fn reset_layout(mut prev: grid.Grid, cols: int, rows: int) {
+    if prev.cols != cols || prev.rows != rows { prev = grid.new(rows, cols) }
 }
 
 fn live(mut o: Options) -> int {
@@ -187,103 +334,210 @@ fn live(mut o: Options) -> int {
         eprint("trail: {e} (minimum 40x12; stdin/stdout must be a terminal; TERM must not be dumb)")
         return 2
     }
-    if o.size_set && (o.cols > t.cols || o.rows > t.rows) {
-        eprint("trail: small: recorded field exceeds terminal")
+    if !o.tier_set && o.script == "" {
+        o.glyph_tier = tier.detect(t.term_name, env.get("LANG") else "")
+    }
+    if !o.size_set && o.script == "" { o.cols = t.cols; o.rows = t.rows }
+    let source = source_for(mut o) else |_| { return 2 }
+    if !valid_size(o.cols, o.rows) || o.cols > t.cols || o.rows > t.rows {
+        eprint("trail: small: field must fit terminal, minimum 40x12, maximum 400x120")
         return 2
     }
-    if !o.size_set { o.cols = t.cols; o.rows = t.rows }
-    var source = replay.new(o.seed, o.glyph_tier, o.cols, o.rows)
-    if o.script != "" {
-        let text = fs.read_text(o.script) else |_| { return 2 }
-        source = replay.from_text(text, vocab()) else |_| { return 2 }
-        if !o.seed_set { o.seed = source.seed }
-        if !o.tier_set { o.glyph_tier = source.tier }
-        o.cols = source.cols
-        o.rows = source.rows
-    }
+    var s = sim.new(o.seed, o.cols / 5, (o.rows - 2) / 3, o.no_title)
+    var recorded = replay.new(o.seed, o.glyph_tier, o.cols, o.rows)
+    if o.no_title { replay.push_key(mut recorded, 0, 8) }
     term.enter(mut t) else |_| { term.leave(mut t); return 2 }
     defer term.leave(mut t)
     var prev = grid.new(o.rows, o.cols)
     var pen = grid.pen_new()
     var decoder = input.new()
     var pending = List[int]()
+    (mut pending).reserve(256)
     var timer = clock.new(clock.now_ns())
-    var tick = 0
     var first = true
     var why = "--ticks"
     var finished = false
+    var key_at: int = 0
+    var carries = false
     while !finished {
-        let wake = clock.wait_until(
-            mut timer,
-            clock.next_due_ns(timer),
-            term.signal_set(),
-        ) else |_| { return 2 }
+        var wake = clock.Wake { meaning: 0, input_ready: false, timed_out: false }
+        region wait_scratch {
+            wake = clock.wait_until(
+                mut timer,
+                clock.next_due_ns(timer),
+                term.signal_set(),
+            ) else |_| { return 2 }
+        }
         if wake.meaning & (term.signal_set() ^ signal.resize()) != 0 {
-            why = "the interrupt"
-            break
+            (mut pending).push(7)
+        }
+        if wake.meaning & signal.resize() != 0 && o.script == "" && !o.size_set {
+            let size = std_term.size(fs.stdout()) else |_| { term.leave(mut t); return 2 }
+            if valid_size(size.columns, size.rows) {
+                o.cols = size.columns
+                o.rows = size.rows
+                replay.push_size(mut recorded, s.tick, o.cols, o.rows)
+                reset_layout(mut prev, o.cols, o.rows)
+                first = true
+            }
         }
         if wake.input_ready {
-            let bytes = term.read_keys(256) else |_| { break }
-            input.feed_all(mut decoder, bytes, clock.now_ns() / 1000000, mut pending)
+            region read_scratch {
+                let bytes = term.read_keys(256) else |_| {
+                    eprint("trail: io: input ended")
+                    return 2
+                }
+                var decoded = List[int]()
+                input.feed_all(mut decoder, bytes, clock.now_ns() / 1000000, mut decoded)
+                for k in decoded {
+                    let key = mapped(k)
+                    if key != 0 && (o.script == "" || key == 6 || key == 7) {
+                        (mut pending).push(key)
+                    }
+                }
+            }
+            key_at = clock.now_ns()
+            carries = true
         }
-        input.flush(mut decoder, clock.now_ns() / 1000000, mut pending)
+        region flush_scratch {
+            var decoded = List[int]()
+            input.flush(mut decoder, clock.now_ns() / 1000000, mut decoded)
+            for k in decoded { let key = mapped(k); if key != 0 { (mut pending).push(key) } }
+        }
         let due = clock.advance(mut timer, clock.now_ns())
         var n = 0
         while n < due && !finished {
-            var keys = List[int]()
-            for k in pending {
-                let key = mapped(k)
-                if key == 6 || key == 7 {
-                    why = if key == 7 then "the interrupt" else "the quit key"
+            if o.trap_at == s.tick { assert(false, "trail: requested trap") }
+            region tick_scratch {
+                var keys = List[int]()
+                for key in pending {
+                    (mut keys).push(key)
+                    replay.push_key(mut recorded, s.tick, key)
+                }
+                (mut pending).reset()
+                if o.script != "" { events(mut o, mut s, source, mut keys) }
+                let stopped = stop(keys)
+                sim.step(mut s, keys)
+                if stopped != 0 {
+                    why = if stopped == 7 then "the interrupt" else "the quit key"
                     finished = true
                 }
             }
-            (mut pending).reset()
-            if o.script != "" { let _size = replay.at(source, tick, mut keys) }
-            if o.trap_at == tick { assert(false, "trail: requested trap") }
-            tick += 1
-            if o.ticks >= 0 && tick >= o.ticks { why = "--ticks"; finished = true }
+            if o.ticks >= 0 && s.tick >= o.ticks { why = "--ticks"; finished = true }
+            if o.script != "" && o.ticks < 0 && s.tick > replay.last_tick(source) {
+                why = "the replay"
+                finished = true
+            }
             n += 1
         }
         if due > 0 {
-            region scratch {
-                let next = frame(o)
+            if prev.cols != o.cols || prev.rows != o.rows {
+                reset_layout(mut prev, o.cols, o.rows)
+                first = true
+            }
+            region render_scratch {
+                let next = art.frame(s, o.cols, o.rows, o.glyph_tier)
                 var out = List[byte]()
-                grid.diff(prev, next, first, mut pen, mut out, tier.dialect(o.glyph_tier, false))
+                grid.diff(
+                    prev,
+                    next,
+                    first,
+                    mut pen,
+                    mut out,
+                    tier.dialect(
+                        o.glyph_tier,
+                        o.truecolor && tier.truecolor_of(env.get("COLORTERM") else ""),
+                    ),
+                )
                 term.write(out) else |_| { return 2 }
-                var j = 0
-                while j < prev.cells.len { prev.cells[j] = copy next.cells[j]; j += 1 }
+                for j in 0..prev.cells.len { prev.cells[j] = copy next.cells[j] }
                 first = false
+            }
+            if o.trace && carries {
+                eprint(
+                    "trace frame {s.tick} carries_key inner_us {(clock.now_ns() - key_at) / 1000}",
+                )
+                carries = false
             }
         }
     }
-    eprint("trail: ended by {why}")
+    term.leave(mut t)
+    if o.record != "" {
+        var bytes = List[byte]()
+        replay.format_scored(recorded, vocab(), s.score, mut bytes)
+        fs.write_bytes(o.record, bytes) else |_| {
+            eprint("trail: io: cannot write {o.record}")
+            return 2
+        }
+    }
+    eprint("trail: ended by {why}; score {s.score}, longest {s.longest}, ticks {s.tick}")
     0
+}
+
+fn selftest() -> int {
+    var bad = headless.diff_property()
+    for row in [
+        "\x1b[A|1",
+        "\x1b[B|2",
+        "\x1b[D|3",
+        "\x1b[C|4",
+        " |5",
+        "q|6",
+        "\x03|7",
+        "\r|8",
+        "r|9",
+        "\x1b|6",
+    ] {
+        let (seq, expected) = row.split_once("|") else ("", "0")
+        let want = expected.to_int() else 0
+        for split in 0..=seq.len {
+            region scratch {
+                var decoder = input.new()
+                var keys = List[int]()
+                var i = 0
+                for b in seq.bytes() {
+                    input.feed(mut decoder, b, if i < split then 1000 else 1010, mut keys)
+                    i += 1
+                }
+                input.flush(mut decoder, 1100, mut keys)
+                if keys.len != 1 || mapped(keys[0]) != want {
+                    bad += 1
+                    print("selftest: decoder {row} split {split} FAILED")
+                }
+            }
+        }
+    }
+    var seed: int = 8
+    var hits = 0
+    for _n in 0..10000 { if sim.hits(sim.d20(mut seed)) { hits += 1 } }
+    if hits != 3403 { print("selftest: seeded d20 FAILED {hits}"); bad += 1 }
+    print("selftest: {bad} failures; d20 {hits}/10000; decoder splits and diff property")
+    bad
 }
 
 /// Parse the command line and run trail; return 2 for bad input or I/O.
 pub fn run() -> int {
     let args = env.args()
-    if args.len == 1 && args[0] == "--selftest" {
-        return headless.diff_property()
-    }
+    if args.len == 1 && args[0] == "--selftest" { return selftest() }
     if args.len == 1 && (args[0] == "--help" || args[0] == "-h") {
         print(
-            "trail --seed N --size WxH --plain --replay FILE --record FILE\nArrows turn; Space pauses; Enter starts; r retries; q/Esc quits. Minimum 40x12.",
+            "trail --seed N --size WxH --plain --replay FILE --record FILE\nArrows turn; Space pauses; Enter starts; r retries; q/Esc quits. Minimum 40x12.\nHeadless: --headless --script FILE --frames N --every K --dump DIR\nArt: --art-study --dump DIR; performance: --bench --size WxH --tier rich|plain",
         )
         return 0
     }
     var o = options() else |_| { eprint("trail: parse: invalid option (try --help)"); return 2 }
+    if !valid_size(o.cols, o.rows) {
+        eprint("trail: small: minimum 40x12, maximum 400x120")
+        return 2
+    }
     if o.apply != "" {
         let bytes = fs.read_bytes(o.apply) else |_| { return 2 }
         var out = fs.stdout()
         fs.write_chunk(mut out, headless.apply(bytes, o.cols, o.rows)) else |_| { return 2 }
         return 0
     }
-    if o.cols < 40 || o.rows < 12 || o.cols > 400 || o.rows > 120 {
-        eprint("trail: small: minimum 40x12, maximum 400x120")
-        return 2
-    }
-    if o.headless_mode { return headless_run(o) }
+    if o.study { return study_run(o) }
+    if o.bench { return bench_run(o) }
+    if o.headless_mode { return headless_run(mut o) }
     live(mut o)
 }

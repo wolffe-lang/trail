@@ -131,7 +131,15 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
     var i = s.length - 1
     while i >= 0 {
         let w = sim.wolf(s, i)
-        sprites.wolf(mut g, top + w.y * 3, left + w.x * 5, w.heading, i == 0, false, t)
+        sprites.wolf(
+            mut g,
+            top + w.y * 3,
+            left + w.x * 5,
+            if i == 0 then s.heading else w.heading,
+            i == 0,
+            false,
+            t,
+        )
         i -= 1
     }
     if s.length > 0 {
@@ -161,7 +169,12 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
     } else {
         "eagle: {s.last_roll}/20 {if sim.hits(s.last_roll) then "HIT" else "miss"} (35%; hit 1-7)"
     }
-    text(mut g, 0, 1, "pack {s.length}  score {s.score}  survived {s.survived}  {roll}", t, true)
+    let hud = if cols < 80 {
+        "P{s.length} S{s.score} E{s.survived} d20:{if s.last_roll == 0 then "--" else "{s.last_roll}"} {if s.last_roll == 0 then "" else if sim.hits(s.last_roll) then "HIT" else "miss"} <=7 35%"
+    } else {
+        "pack {s.length}  score {s.score}  survived {s.survived}  {roll}"
+    }
+    text(mut g, 0, 1, hud, t, true)
     draw.fill(mut g, rows - 1, 0, 1, cols, grid.cell(32, 7, bg, 0))
     text(
         mut g,
