@@ -1,0 +1,12 @@
+tr02 prediction before implementation, 2026-10-25
+The supplied 5x7 north body, side legs and ear corners should read clearly at80x24;
+south must be a generated vertical mirror, not the old side-view quarter-turn.
+Both committed short pty recordings have only one meal/two wolves and no eagle
+strike opportunities: predicted unchanged replay dodge opportunity rate 0/0,
+not a measurable percentage. The longer 728-tick natural witness is expected to
+end during the slower first approach instead of the old instant strike.
+Predict all north/south and eagle-bearing golden directories move, plus every
+state dump once scatter/dodge counters are exposed; E/W-only cell text stays.
+Implement recommended R-tr02-1/2/3 A: 60% approach, positional dodge before RNG,
+30-tick scatter. A visible edge loiter supplies >=2s even on small fields.
+Base2284d57 is merged game e658f5b plus the materialised tr01 note.
