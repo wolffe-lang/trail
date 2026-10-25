@@ -8,33 +8,37 @@ reaches the engine's hash, including for signed 64-bit seed extremes.
 
 ## Wolves
 
-2026-10-25 play revision: a long, low solid torso, a forward snout and ears,
-four moving feet and a trailing tail. Pack's own sheet and distance-driven
-trot were studied as the collection's proportions/timing reference; these
-masks and sheets are original trail work, not copied pack files.
+The rich east-facing construction is seven columns by three rows. Its
+central five-cell body is a solid horizontal bar with a straight back and
+belly. A head block projects at the front with a missing upper quadrant
+for an ear notch; the tail is one quarter-block stroke behind the body.
+The four legs are **separate full-height half-cell columns** at columns
+0, 2, 4 and 6, with a complete floor cell between each. No contact pose
+hides or merges two of them. A narrow hip joins the rear leg to the bar.
 
-One north-facing semantic pixel mask is rotated as a whole for all four
-headings: torso, head, ears, feet and tail never come from unrelated body
-shapes. Two vertical pixels pack into an upper, lower or full block. The
-existing **five-column by three-row footprint is unchanged**, as are the
-logical board, movement, wrap and hit rules. The narrow torso has a longer
-axis than its width; the four contact points swing around it instead of
-forming the old square block.
+West mirrors the complete east sheet. North and south quarter-turn the
+same cells and each cell's quadrants, producing a three-column by seven-row
+sheet; they are not squashed versions or unrelated poses. Every heading
+is centred in a **7x7 logical collision cell**. This prevents overlap when
+neighbours turn perpendicular to one another. The former 5x3 footprint
+cannot hold four separated columns, and a 7x3 envelope cannot contain its
+own literal quarter-turn. This geometry requires a 40x16 minimum to retain
+two logical board rows; 80x24 and 200x60 remain supported.
 
-Each wolf owns a travelled-cell counter. Every accepted cell movement
-advances its four-contact leg cycle by one; ticks without movement do not.
-The phases are reach, contact, gather and push-off. The tail changes side
-between consecutive four-contact strides: one complete sway per stride
-pair (eight travelled cells). Pausing freezes position, contact phase and
-tail, including newcomers. A newcomer uses the very same sprite/gait from
-its accumulated approach distance in 1/256-cell units, not its animation
-age; that travelled distance is retained when it joins the pack. Its path
-uses Manhattan distance for the contact counter.
+Four contact phases alternate the diagonal pairs: front-left with
+back-right, then front-right with back-left. Each foot sweeps between the
+left and right half of its own column, retaining the full-height stem
+throughout. Both diagonal-pair and four-distinct-frame assertions are
+independent of the golden bytes. Distance, not ticks, advances each wolf's
+phase. The tail changes side once per pair of strides; pausing freezes
+all contact/tail phases and the newcomer's approach. Arriving wolves use
+the same construction and retain their distance-driven phase on joining.
 
-The leader remains bright and bold, followers grey, and a newcomer gold.
-Plain has the same occupancy mask, footprint, four leg frames and tail
-period. It uses directional heads, solid `#` torso cells, four contact
-marks and a `~` tail. Every pose is checked on both tiers and every heading.
+The leader stays bright/bold, followers grey and arrivals gold. Plain has
+exactly the same cell occupancy, orientation and four phases: `#` for the
+body and planted contact, `|` for the other contact, `.` for the tail.
+Separate foreground/background styles keep its tail distinct from soil.
+All sheets and drawing code are original work.
 
 ## Meat, eagle and shadow
 
@@ -48,15 +52,14 @@ the floor's palette, with different original text.
 
 ## Study and goldens
 
-`target/trail --art-study --dump target/study` writes a wolf-contact sheet
-and a props companion for each tier at 80x24 and 200x60: eight sheets total.
-The wolf sheet crosses all four headings with all four contact phases,
-shows leader/follower/newcomer coats, and includes the opposite tail sway.
-The props companion retains meat, eagle and sliding shadow.
+`target/trail --art-study --dump target/study` writes one contact sheet
+per heading, tier and field size (16 sheets), plus four props companions.
+Each contact sheet shows the four phases across one row and the opposite
+tail sway below. A simple marked soil patch, rather than scattered rocks,
+lets the eye count all four legs. The game still uses the full soil floor.
 
-The ordinary-key `stride-{up,down,left,right}-{80,200}` goldens each move
-one logical cell, pinning contact phase one in every heading and both
-tiers. All original scene goldens are regenerated for the new wolves.
-Unit rows check distance rather than tick-driven phase, pause freeze,
-newcomer continuity, four distinct frames on each tier, exact rotations,
-four separate feet and the tail's stride pair.
+`tools/sprite-frames.py` extracts the actual rich/plain contact cells from
+the committed sheets for review, not a hand-drawn approximation. Mid-stride
+goldens cover every heading at both sizes and tiers. Geometry tests pin the
+straight body bar, four separated leg columns, head notch, tail, diagonal
+pairs, exact tier occupancy and the quarter-turned collision envelope.

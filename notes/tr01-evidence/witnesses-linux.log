@@ -1,0 +1,103 @@
+recorded-80-rich.pk seed 9 exit 0
+pk 1
+seed 9
+tier rich
+size 80x24
+# score 100
+t 0 start
+t 78 quit
+
+trail: verified score 100
+tick 79 age 78 phase 1 score 100 length 2 longest 2 pending 0 eaten 1 survived 0 strikes 0 roll 0 eagle_age -1
+wrap 0 0 0 1
+wolf 4 1 4
+gait 0 10
+wolf 3 1 4
+gait 1 23
+meat 4 0
+
+recorded-200-plain.pk seed 206 exit 0
+pk 1
+seed 206
+tier plain
+size 200x60
+# score 100
+t 0 start
+t 63 down
+t 94 quit
+
+trail: verified score 100
+tick 95 age 94 phase 1 score 100 length 2 longest 2 pending 0 eaten 1 survived 0 strikes 0 roll 0 eagle_age -1
+wrap 0 1 0 0
+wolf 22 0 2
+gait 0 12
+wolf 22 7 2
+gait 1 14
+meat 7 0
+
+natural witness 728 ticks {'tick': 727, 'age': 727, 'phase': 1, 'score': 1200, 'length': 11, 'longest': 12, 'pending': 1, 'eaten': 12, 'survived': 0, 'strikes': 1, 'roll': 3, 'eagle_age': 30}
+goldens: wrote tests/goldens/death-200-rich
+goldens: wrote tests/goldens/death-200-plain
+goldens: wrote tests/goldens/death-80-rich
+goldens: wrote tests/goldens/death-80-plain
+goldens: wrote tests/goldens/hit-200-rich
+goldens: wrote tests/goldens/hit-200-plain
+goldens: wrote tests/goldens/hit-80-rich
+goldens: wrote tests/goldens/hit-80-plain
+goldens: wrote tests/goldens/miss-200-rich
+goldens: wrote tests/goldens/miss-200-plain
+goldens: wrote tests/goldens/miss-80-rich
+goldens: wrote tests/goldens/miss-80-plain
+trail: verified score 1200
+goldens: wrote tests/goldens/natural-200-rich
+trail: verified score 1200
+goldens: wrote tests/goldens/natural-200-plain
+goldens: wrote tests/goldens/one-200-rich
+goldens: wrote tests/goldens/one-200-plain
+goldens: wrote tests/goldens/one-80-rich
+goldens: wrote tests/goldens/one-80-plain
+goldens: wrote tests/goldens/stride-down-200-rich
+goldens: wrote tests/goldens/stride-down-200-plain
+goldens: wrote tests/goldens/stride-down-80-rich
+goldens: wrote tests/goldens/stride-down-80-plain
+goldens: wrote tests/goldens/stride-left-200-rich
+goldens: wrote tests/goldens/stride-left-200-plain
+goldens: wrote tests/goldens/stride-left-80-rich
+goldens: wrote tests/goldens/stride-left-80-plain
+goldens: wrote tests/goldens/stride-right-200-rich
+goldens: wrote tests/goldens/stride-right-200-plain
+goldens: wrote tests/goldens/stride-right-80-rich
+goldens: wrote tests/goldens/stride-right-80-plain
+goldens: wrote tests/goldens/stride-up-200-rich
+goldens: wrote tests/goldens/stride-up-200-plain
+goldens: wrote tests/goldens/stride-up-80-rich
+goldens: wrote tests/goldens/stride-up-80-plain
+goldens: wrote tests/goldens/summons-200-rich
+goldens: wrote tests/goldens/summons-200-plain
+goldens: wrote tests/goldens/summons-80-rich
+goldens: wrote tests/goldens/summons-80-plain
+goldens: wrote tests/goldens/telegraph-200-rich
+goldens: wrote tests/goldens/telegraph-200-plain
+goldens: wrote tests/goldens/telegraph-80-rich
+goldens: wrote tests/goldens/telegraph-80-plain
+goldens: wrote tests/goldens/title-200-rich
+goldens: wrote tests/goldens/title-200-plain
+goldens: wrote tests/goldens/title-80-rich
+goldens: wrote tests/goldens/title-80-plain
+goldens: wrote tests/goldens/wrap-down-200-rich
+goldens: wrote tests/goldens/wrap-down-200-plain
+goldens: wrote tests/goldens/wrap-down-80-rich
+goldens: wrote tests/goldens/wrap-down-80-plain
+goldens: wrote tests/goldens/wrap-left-200-rich
+goldens: wrote tests/goldens/wrap-left-200-plain
+goldens: wrote tests/goldens/wrap-left-80-rich
+goldens: wrote tests/goldens/wrap-left-80-plain
+goldens: wrote tests/goldens/wrap-right-200-rich
+goldens: wrote tests/goldens/wrap-right-200-plain
+goldens: wrote tests/goldens/wrap-right-80-rich
+goldens: wrote tests/goldens/wrap-right-80-plain
+goldens: wrote tests/goldens/wrap-up-200-rich
+goldens: wrote tests/goldens/wrap-up-200-plain
+goldens: wrote tests/goldens/wrap-up-80-rich
+goldens: wrote tests/goldens/wrap-up-80-plain
+goldens: wrote tests/goldens/art

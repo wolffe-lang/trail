@@ -9,7 +9,7 @@ The optional `start` header is zero for trail.
 
 ```
 pk 1
-seed 52
+seed 9
 tier rich
 size 80x24
 # score 100
@@ -48,7 +48,12 @@ ordinary step; a claimed score in such a file is not evidence of ordinary
 play. The rare-scene goldens disclose this channel in their comments.
 
 `tests/replays/` holds two actual pty recordings, each score 100 with one
-meal and an arrived follower. `tests/cases/natural-80.pk` is a scripted
-ordinary-key run, without scene events: 25 meals, longest pack 23, first
-eagle roll 3, final score 2500. The refresh tools are not run by CI.
+meal and an arrived follower. `tests/cases/natural-200.pk` is a scripted
+ordinary-key run, without scene events: 728 ticks, 12 meals, longest pack 12, first
+eagle roll 3, final score 1200. The refresh tools are not run by CI.
 The integration gate checks all three using both compiled backends.
+
+The four-leg revision uses a 7x7 logical collision cell. The two refreshed
+pty recordings use seeds 9 and 206 and both verify score 100; the natural
+200x60 run verifies 1200. Replays recorded with the old, smaller geometry
+may correctly report UNVERIFIED instead of silently accepting an old score.

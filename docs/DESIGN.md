@@ -6,9 +6,9 @@ late frames drop renders, never simulation ticks.
 
 ## The field and the pack
 
-One logical cell occupies five terminal columns and three rows. The first
+One logical cell occupies seven terminal columns and seven rows. The first
 and last terminal rows are the HUD and controls. An 80x24 field therefore
-has 16x7 logical cells; 200x60 has 40x19. The minimum is 40x12 (8x3).
+has 11x3 logical cells; 200x60 has 28x8. The minimum is 40x16 (5x2).
 Dimensions above 400x120 are refused. Unused margins carry the same soil.
 
 The pack begins with one wolf at the centre, heading east. Arrows turn it;
@@ -67,7 +67,7 @@ never grows, remaps wolves or changes the RNG because of a resize. Small
 windows clip it; enlarge the terminal to recover the view. With `--size`,
 the field stays fixed. Replay resizes reproduce the layout changes.
 
-Trail validates its 40x12 minimum before constructing the engine's public
+Trail validates its 40x16 minimum before constructing the engine's public
 terminal state: lair's opener currently fixes 80x24. The engine still owns
 enter/leave, raw mode, signal listening and the registered runtime restore.
 Quit, Escape, typed Ctrl-C, normal replay/tick exit, I/O returns and a trap
@@ -78,8 +78,8 @@ all use that restore. SIGKILL and machine loss cannot restore a terminal.
 The rich/plain simulation is identical. Unit tests cover every rule;
 black-box tests check the built executables' state, not just golden bytes.
 Rare visual states use explicit `scene` replay fixtures. A separate,
-ordinary-key 561-tick run collects 25 meals, reaches 23 wolves, receives
-the first eagle hit and verifies score 2500. Two actual pty recordings
+ordinary-key 728-tick run collects 12 meals, reaches 12 wolves, receives
+the first eagle hit and verifies score 1200. Two actual pty recordings
 each verify score 100. Fixture files are not recordings.
 
 These are the initial values from 2026-10-25. Pace, meat count and cadence
@@ -88,7 +88,8 @@ settled rules. Play can tune the former without quietly changing the latter.
 
 ## Distance-driven gait (2026-10-25 play revision)
 
-The five-by-three footprint and every collision rule stay unchanged. Each
+The sprite occupies a 7x3 or quarter-turned 3x7 sheet inside a 7x7 logical
+collision envelope; the rule remains one occupied logical cell per wolf. Each
 pack member has a separate travelled-cell counter incremented only after
 a successful cell move, including a seam crossing. Its leg phase is
 distance modulo four; its tail phase is floor(distance / four) modulo
@@ -96,3 +97,14 @@ two. Newcomers accumulate actual approach distance in 1/256-cell units
 and retain its whole-cell component when they join. Pause advances none
 of these counters or approach positions. The body uses the same original
 turned mask in every heading, with long torso, forward head/ears and tail.
+
+## Four-leg geometry revision, 2026-10-25
+
+Four separated one-cell leg columns require seven columns, since three
+whole floor cells separate them. East/west therefore use a 7x3 sheet;
+north/south use the same construction quarter-turned to 3x7. Every logical
+cell reserves 7x7, so a perpendicular neighbour cannot overlap it. This
+changes field capacity and seeded meat placement, not self-collision, wrap
+or eagle odds. The 40x16 minimum holds two such rows plus the HUD/control
+rows. Earlier geometry replays should not be expected to preserve their
+scores; fresh ordinary-key witnesses are pinned for this revision.
