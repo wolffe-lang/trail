@@ -47,9 +47,9 @@ interrupts and runtime traps.
 
 | key | action |
 |---|---|
-| Enter | start from the title |
-| arrows | turn; reverse is refused |
-| Space | pause/resume |
+| Enter or any mapped key except quit/interrupt | start from the title or retry after death |
+| arrows | choose the first heading on a card; turn in play, reverse refused |
+| Space | dismiss a card; otherwise pause/resume |
 | r | retry the same seed after death |
 | q / Escape | quit |
 | Ctrl-C | quit and restore |
@@ -75,8 +75,8 @@ container (podman by default; `LAIR_ENGINE=docker` for Docker).
 appropriate; coordinate the host's lock before using it. The CI PR tier
 runs Linux; the full tier adds macOS and performance.
 
-There are 62 checked unit tests including the pinned engine, 23 cases on
-both tiers plus the art directory (47 golden directories), ten pty rows,
+There are 63 checked unit tests including the pinned engine, 23 cases on
+both tiers plus the art directory (47 golden directories), twelve pty rows,
 and executable-level gameplay checks on both compiler backends. Two real
 pty recordings each pin score 100; an ordinary-key 25-meal/23-wolf eagle
 witness pins 2500. Rare visual-scene fixtures are explicitly labelled,

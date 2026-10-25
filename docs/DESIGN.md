@@ -54,7 +54,9 @@ threshold and fixed odds, including at the minimum size.
 
 The death card gives the cause, score, longest pack, survived/strike counts
 and the most recent sixteen rolls. The complete history is reproducible
-from the replay. `r` retries the original seed and initial board, retaining
+from the replay. Enter, Space, an arrow or `r` dismisses either card; arrows also choose
+the first heading and Space does not pause on dismissal. Quit and interrupt
+leave without starting. A death-card key retries the original seed and initial board, retaining
 the replay's monotonically increasing tick count.
 
 ## Window changes and terminal lifecycle
