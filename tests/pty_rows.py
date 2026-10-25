@@ -38,9 +38,9 @@ def title_cr(bin,ctx):return title_start(bin,ctx,b'\r')
 def title_space(bin,ctx):return title_start(bin,ctx,b' ')
 
 def minimum(bin,ctx):
-    s=ctx.Session([bin,'--size','40x12','--plain'],12,40,ctx.env_for())
+    s=ctx.Session([bin,'--size','40x16','--plain'],16,40,ctx.env_for())
     s.type(b'\r',.2)
-    # At 40x12 the compact HUD must still expose the odds and threshold.
+    # At 40x16 the compact HUD must still expose the odds and threshold.
     if b'35%' not in s.out: problems=['minimum HUD hid fixed odds']
     else: problems=[]
     s.type(b'q');s.finish();ctx.common_checks(s,0,problems)
@@ -76,4 +76,4 @@ def record(bin,ctx):
     if p.returncode or 'verified score' not in p.stderr:problems.append('recorded score did not verify: '+p.stderr)
     return s,problems
 
-ROWS={'title-pause':title,'title-cr':title_cr,'title-space':title_space,'minimum-40x12':minimum,'escape':escape,'resize':resize,'record-roundtrip':record}
+ROWS={'title-pause':title,'title-cr':title_cr,'title-space':title_space,'minimum-40x16':minimum,'escape':escape,'resize':resize,'record-roundtrip':record}

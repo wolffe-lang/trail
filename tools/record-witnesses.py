@@ -12,10 +12,17 @@ loader=importlib.machinery.SourceFileLoader('trail_pty',str(ROOT/'.lair/tools/pt
 ctx=importlib.util.module_from_spec(importlib.util.spec_from_loader('trail_pty',loader));loader.exec_module(ctx)
 bin=str(ROOT/'target/release/trail')
 out=ROOT/'tests/replays';out.mkdir(parents=True,exist_ok=True)
+(ROOT/'target/pty').mkdir(parents=True,exist_ok=True)
 for cols,rows,tier in [(80,24,'rich'),(200,60,'plain')]:
-    w,h=cols//5,(rows-2)//3
+    w,h=cols//7,(rows-2)//7
     desired=(h//2)*w+(w//2+3)
-    seed=next(s for s in range(100000) if ((s+1)*48271%2147483647)%(w*h)==desired)
+    def suitable(seed):
+        rng=seed+1
+        for n in range(5):
+            rng=rng*48271%2147483647
+            if n==0 and rng%(w*h)!=desired:return False
+        return (rng%(w*h))//w!=h//2
+    seed=next(s for s in range(100000) if suitable(s))
     path=out/f'recorded-{cols}-{tier}.pk'
     s=ctx.Session([bin,'--no-title','--seed',str(seed),'--size',f'{cols}x{rows}',
                    '--tier',tier,'--record',str(path)],rows,cols,ctx.env_for())

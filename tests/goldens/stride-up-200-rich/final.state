@@ -1,5 +1,5 @@
 tick 8 age 8 phase 1 score 0 length 1 longest 1 pending 0 eaten 0 survived 0 strikes 0 roll 0 eagle_age -1
 wrap 0 0 0 0
-wolf 20 8 1
+wolf 14 3 1
 gait 0 1
-meat 8 2
+meat 20 7

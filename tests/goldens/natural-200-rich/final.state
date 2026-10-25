@@ -1,0 +1,26 @@
+tick 728 age 727 phase 1 score 1200 length 11 longest 12 pending 1 eaten 12 survived 0 strikes 1 roll 3 eagle_age 30
+wrap 3 1 1 1
+wolf 10 1 3
+gait 0 121
+wolf 11 1 3
+gait 1 128
+wolf 12 1 3
+gait 2 104
+wolf 13 1 3
+gait 3 107
+wolf 14 1 1
+gait 4 102
+wolf 14 2 3
+gait 5 70
+wolf 15 2 3
+gait 6 75
+wolf 16 2 3
+gait 7 59
+wolf 17 2 3
+gait 8 43
+wolf 18 2 3
+gait 9 39
+wolf 19 2 3
+gait 10 30
+meat 6 1
+meat 25 1

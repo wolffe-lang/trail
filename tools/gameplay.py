@@ -50,7 +50,7 @@ def main():
             wraps = list(map(int,text.splitlines()[1].split()[1:]))
             assert wraps[i] == 1, (name,wraps)
             wolf = list(map(int,re.search(r'^wolf (.*)$',text,re.M)[1].split()))
-            c, r = size//5, ((24 if size==80 else 60)-2)//3
+            c, r = size//7, ((24 if size==80 else 60)-2)//7
             assert wolf[:2] == ([c//2,r-1],[c//2,0],[c-1,r//2],[0,r//2])[i], (name,wolf)
     for path in sorted((ROOT/'tests'/'replays').glob('*.pk')):
         frames = int(re.search(r'^t (\d+) quit$',path.read_text(),re.M)[1])+1
@@ -59,11 +59,12 @@ def main():
         assert state['score'] == claim
         assert state['eaten'] >= 1, 'recordings must demonstrate a real meal'
         print(f'gameplay: recorded {path.name}: score {claim}, length {state["length"]}, meals {state["eaten"]} verified')
-    natural = ROOT/'tests/cases/natural-80.pk'
-    st, _, _ = run(bin,natural,561)
-    assert st['score'] == 2500 and st['eaten'] == 25 and st['strikes'] == 1 and st['roll'] == 3 and st['length'] == 22
-    print('gameplay: natural ordinary-key run: 25 meals, 23 wolves, first eagle hit, score 2500')
-    bad = [('--size','39x12'),('--size','40x11'),('--every','0'),('--seed','x')]
+    natural = ROOT/'tests/cases/natural-200.pk'
+    frames=int(re.search(r'^# frames (\d+)',natural.read_text(),re.M)[1])
+    st, _, _ = run(bin,natural,frames)
+    assert st['eaten']==12 and st['strikes']==1 and st['phase']==1 and st['score']==1200 and st['longest']==12
+    print(f'gameplay: natural ordinary-key run: {st["eaten"]} meals, longest {st["longest"]}, score {st["score"]}')
+    bad = [('--size','39x16'),('--size','40x15'),('--every','0'),('--seed','x')]
     for flags in bad:
         p = subprocess.run([str(bin),'--headless',*flags],capture_output=True,text=True)
         assert p.returncode == 2 and ('small' in p.stderr or 'parse' in p.stderr)

@@ -11,9 +11,9 @@ import subprocess
 ROOT=Path(__file__).resolve().parents[1]
 bin=ROOT/'target/release/trail'
 path=ROOT/'target/natural-route.pk'
-header='pk 1\nseed 52\ntier rich\nsize 80x24\n'
+header='pk 1\nseed 52\ntier rich\nsize 200x60\n'
 keys=['t 0 start']
-w,h=16,7
+w,h=28,8
 vectors={1:(0,-1),2:(0,1),3:(-1,0),4:(1,0)}
 words={1:'up',2:'down',3:'left',4:'right'}
 opposite={1:2,2:1,3:4,4:3}
@@ -51,7 +51,7 @@ for tick in range(1100):
 keys.append(f't {tick+1} quit')
 # The final appended quit runs one tick after the observed score state.
 frames=tick+2
-case=ROOT/'tests/cases/natural-80.pk'
+case=ROOT/'tests/cases/natural-200.pk'
 case.write_text(header+f'# frames {frames} every 60 from 600\n# score {st["score"]}\n'+'\n'.join(keys)+'\n')
 print('natural witness',frames,'ticks',st,flush=True)
 assert st['eaten']>=3 and st['strikes']>=1,st
