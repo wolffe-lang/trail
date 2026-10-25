@@ -1,0 +1,11 @@
+tr01 prediction before implementation, 2026-10-25
+The old 5x3 mask cannot display four separated leg columns plus body/head/tail.
+Recommend R-tr01-1: east/west 7x3 and quarter-turned north/south 3x7; a 7x7
+logical collision envelope prevents overlap when adjacent wolves turn.
+Recommend R-tr01-2: minimum 40x16, retaining at least two logical rows; 40x12
+cannot fit two quarter-turned wolves. Implement these recommendations, not decisions.
+Predict every phase has exactly four distinct feet and three intervening floor
+cells. Body top/belly remain straight; diagonal pairs alternate full/raised.
+Predict unchanged 35% strike semantics, regenerated seeded witnesses, and <1 ms
+200x60 plain render+diff inside the locked kasumi 8-11 container.
+Base is trunk 0c740f8, consisting of merged code 6dbe253 plus its materialised note.
