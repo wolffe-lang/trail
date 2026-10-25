@@ -15,6 +15,15 @@ the engine's cursor-position-report table; each glyph should be one cell.
 | U+2580 | ▀ | wolf upper pixel |
 | U+2584 | ▄ | wolf lower pixel, eagle |
 | U+2588 | █ | solid wolf and meat |
+| U+258C | ▌ | full-height left leg column |
+| U+2590 | ▐ | full-height right leg column / hip |
+| U+2596 | ▖ | tail stroke |
+| U+2597 | ▗ | opposite tail stroke |
+| U+2598 | ▘ | rotated tail |
+| U+2599 | ▙ | turned notched head |
+| U+259C | ▜ | turned notched head |
+| U+259D | ▝ | rotated tail |
+| U+259F | ▟ | head with ear notch |
 | U+25AA | ▪ | soil clod |
 | U+25C6 | ◆ | rock |
 

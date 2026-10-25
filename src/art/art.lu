@@ -79,16 +79,23 @@ fn card(mut g: grid.Grid, title: str, lines: List[str], t: int) {
     }
 }
 
-/// Frame from pure simulation. A logical cell is five columns by three rows;
+/// Frame from pure simulation. A logical cell is seven columns by seven rows;
 /// resizing changes only centring, never the board or seeded rules.
 pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
     var g = floor(s.seed, cols, rows, t)
-    let left = (cols - s.cols * 5) / 2
-    let top = 1 + (rows - 2 - s.rows * 3) / 2
-    for m in s.meat { sprites.meat(mut g, top + m.y * 3 + 1, left + m.x * 5 + 1, t) }
+    let left = (cols - s.cols * sprites.CELL_SPAN) / 2
+    let top = 1 + (rows - 2 - s.rows * sprites.CELL_SPAN) / 2
+    for m in s.meat {
+        sprites.meat(
+            mut g,
+            top + m.y * sprites.CELL_SPAN + 3,
+            left + m.x * sprites.CELL_SPAN + 2,
+            t,
+        )
+    }
     if s.eagle_age >= 0 && s.length > 0 {
-        let target_x = left + s.eagle_x * 5
-        let target_y = top + s.eagle_y * 3
+        let target_x = left + s.eagle_x * sprites.CELL_SPAN + sprites.CELL_SPAN / 2 - 2
+        let target_y = top + s.eagle_y * sprites.CELL_SPAN + sprites.CELL_SPAN / 2 - 1
         let start_x = if s.eagle_edge == 0 {
             -8
         } else if s.eagle_edge == 1 {
@@ -134,8 +141,8 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
         let w = sim.wolf(s, i)
         sprites.wolf(
             mut g,
-            top + w.y * 3,
-            left + w.x * 5,
+            top + w.y * sprites.CELL_SPAN,
+            left + w.x * sprites.CELL_SPAN,
             if i == 0 then s.heading else w.heading,
             sim.gait_distance(s, i),
             i == 0,
@@ -148,8 +155,8 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
         let tail = sim.wolf(s, s.length - 1)
         for r in s.runners {
             if r.active {
-                let x = r.px * 5 / 256
-                let y = r.py * 3 / 256
+                let x = r.px * sprites.CELL_SPAN / 256
+                let y = r.py * sprites.CELL_SPAN / 256
                 let heading = if tail.x * 256 > r.px {
                     4
                 } else if tail.x * 256 < r.px {
@@ -228,24 +235,37 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
     g
 }
 
-/// Original wolf study: every heading crossed with all four contact poses,
-/// plus the opposite tail sway. Both tiers use the same footprint and count.
-pub fn study(seed: int, cols: int, rows: int, t: int) -> grid.Grid {
+/// Clear contact study for one heading: four phases across, opposite tail
+/// sway below, with uncluttered floor showing between every limb column.
+pub fn study(seed: int, cols: int, rows: int, t: int, heading: int) -> grid.Grid {
     var g = floor(seed, cols, rows, t)
-    text(mut g, 0, 1, "TRAIL / distance-driven trot / {tier.name(t)}", t, true)
-    for h in 1..5 {
-        let x = 3 + (h - 1) * 18
-        for f in 0..4 {
-            text(mut g, 2 + f * 4, x, "H{h} contact {f}", t, false)
-            sprites.wolf(mut g, 3 + f * 4, x, h, f, f == 0, f == 3, t)
+    text(mut g, 0, 1, "TRAIL / four separate legs / H{heading} / {tier.name(t)}", t, true)
+    for f in 0..4 {
+        let x = 3 + f * 18
+        text(mut g, 2, x, "phase {f}", t, false)
+        text(mut g, 12, x, "tail other side", t, false)
+        for top in [3, 13] {
+            draw.fill(
+                mut g,
+                top,
+                x - 1,
+                8,
+                9,
+                grid.cell(
+                    if t == tier.PLAIN then 46 else 183,
+                    if t == tier.PLAIN then 3 else 94,
+                    if t == tier.PLAIN then 0 else 52,
+                    0,
+                ),
+            )
         }
-        text(mut g, 18, x, "H{h} tail sway", t, false)
-        sprites.wolf(mut g, 19, x, h, 4, false, false, t)
+        sprites.wolf(mut g, 3, x, heading, f, f == 0, f == 3, t)
+        sprites.wolf(mut g, 13, x, heading, f + 4, false, false, t)
     }
     g
 }
 
-/// Props companion keeps meat/eagle/shadow visible beside the gait study.
+/// Props companion for each tier/size, separate from the enlarged wolf sheet.
 pub fn study_props(seed: int, cols: int, rows: int, t: int) -> grid.Grid {
     var g = floor(seed, cols, rows, t)
     text(mut g, 1, 2, "TRAIL / meat, eagle and sliding shadow / {tier.name(t)}", t, true)

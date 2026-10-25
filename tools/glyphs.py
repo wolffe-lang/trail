@@ -8,4 +8,4 @@ seen=set()
 for path in (root/'tests/goldens').rglob('*.txt'):
     if 'rich' in str(path):seen|={ord(c) for c in path.read_text() if ord(c)>127}
 assert wanted==seen,('missing',seen-wanted,'stale',wanted-seen)
-print('glyphs: eight documented non-ASCII rich glyphs, sets equal')
+print(f'glyphs: {len(wanted)} documented non-ASCII rich glyphs, sets equal')

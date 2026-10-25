@@ -1,75 +1,120 @@
-//! Original long-bodied wolf and four-frame distance-driven trot, in the
-//! existing five-by-three cell footprint. Pack's gait is a reference only.
+//! Seven-column body bar and four separated leg columns. The north/south
+//! construction is quarter-turned, not compressed into the old blob.
 
 use grid
 use tier
 
-/// Four contact poses, advanced once per logical cell travelled.
+/// Logical collision envelope for every heading; actual sheet is 7x3 or 3x7.
+pub const CELL_SPAN: int = 7
+
+/// Four alternating diagonal-pair contact frames, driven by distance.
 pub fn leg_phase(distance: int) -> int { distance % 4 }
 
-/// One left/right tail-sway cycle spans a pair of four-contact strides.
+/// Tail sway spans two complete contact strides.
 pub fn tail_phase(distance: int) -> int { distance / 4 % 2 }
 
-/// North-facing semantic pixel: 0 empty, 1 solid torso, 2 forward head,
-/// 3 ears, 4 four separate feet, 5 tail. One original shape, not four sheets.
-pub fn north(x: int, y: int, distance: int) -> int {
-    if x < 0 || x > 4 || y < 0 || y > 4 { return 0 }
-    let f = leg_phase(distance)
-    let fore_left = if f == 0 then 0 else if f == 2 then 2 else 1
-    let fore_right = if f == 1 then 2 else if f == 3 then 0 else 1
-    let hind_left = if f == 0 || f == 3 then 4 else 3
-    let hind_right = if f == 1 || f == 2 then 4 else 3
-    if x == 0 && (y == fore_left || y == hind_left) ||
-        x == 4 && (y == fore_right || y == hind_right) {
-        return 4
+/// East/west width seven, north/south width three.
+pub fn width(heading: int) -> int { if heading <= 2 then 3 else 7 }
+
+/// East/west height three, north/south height seven.
+pub fn height(heading: int) -> int { if heading <= 2 then 7 else 3 }
+
+/// East-facing part: body=1, head=2, ear-notch=3, four feet=4, tail=5.
+pub fn east_part(x: int, y: int) -> int {
+    if x < 0 || x > 6 || y < 0 || y > 2 { return 0 }
+    if y == 0 { return if x == 0 then 5 else if x == 6 then 3 else 0 }
+    if y == 1 { return if x == 6 then 2 else 1 }
+    if x % 2 == 0 then 4 else 0
+}
+
+// Quadrants UL=1, UR=2, LL=4, LR=8. Legs always retain a full-height
+// one-half-cell column; only their fore/aft contact changes, not visibility.
+fn east_mask(x: int, y: int, distance: int) -> int {
+    let kind = east_part(x, y)
+    if kind == 0 { return 0 }
+    if kind == 5 { return if tail_phase(distance) == 0 then 4 else 8 }
+    if kind == 3 { return 14 } // forward head with an upper-left ear notch
+    if y == 1 { return if x == 0 then 10 else 15 } // hip, solid bar, head
+    let a = x == 2 || x == 4 // back-right + front-left, the diagonal pair
+    let phase = leg_phase(distance)
+    let forward = if a then phase == 1 || phase == 2 else phase == 0 || phase == 1
+    if forward then 10 else 5
+}
+
+fn rotate(mask: int) -> int {
+    (if mask & 1 != 0 then 2 else 0) |
+        (if mask & 2 != 0 then 8 else 0) |
+        (if mask & 4 != 0 then 1 else 0) |
+        (if mask & 8 != 0 then 4 else 0)
+}
+
+fn mirror(mask: int) -> int {
+    (if mask & 1 != 0 then 2 else 0) |
+        (if mask & 2 != 0 then 1 else 0) |
+        (if mask & 4 != 0 then 8 else 0) |
+        (if mask & 8 != 0 then 4 else 0)
+}
+
+fn east_coordinates(x: int, y: int, heading: int) -> (int, int) {
+    if heading == 1 { return (6 - y, x) }
+    if heading == 2 { return (y, 2 - x) }
+    if heading == 3 { return (6 - x, y) }
+    (x, y)
+}
+
+/// Semantic part after the same turn/mirror as the visible cell.
+pub fn part(x: int, y: int, heading: int) -> int {
+    let (ex, ey) = east_coordinates(x, y, heading)
+    east_part(ex, ey)
+}
+
+/// Rotated two-by-two quadrant mask, with no scale or clipped extremities.
+pub fn mask_at(x: int, y: int, heading: int, distance: int) -> int {
+    if x < 0 || x >= width(heading) || y < 0 || y >= height(heading) { return 0 }
+    let (ex, ey) = east_coordinates(x, y, heading)
+    let m = east_mask(ex, ey, distance)
+    if heading == 1 { return rotate(rotate(rotate(m))) }
+    if heading == 2 { return rotate(m) }
+    if heading == 3 { return mirror(m) }
+    m
+}
+
+fn glyph(mask: int) -> int {
+    match mask {
+        1 => 9624,
+        2 => 9629,
+        3 => 9600,
+        4 => 9622,
+        5 => 9612,
+        6 => 9630,
+        7 => 9627,
+        8 => 9623,
+        9 => 9626,
+        10 => 9616,
+        11 => 9628,
+        12 => 9604,
+        13 => 9625,
+        14 => 9631,
+        15 => 9608,
+        _ => 0,
     }
-    if y == 4 && x == (if tail_phase(distance) == 0 then 1 else 3) { return 5 }
-    if x == 2 && y == 0 { return 2 }
-    if x == 2 && y == 1 { return 1 }
-    if y == 1 && (x == 1 || x == 3) { return 3 }
-    if (y == 2 || y == 3) && (x == 1 || x == 2) { return 1 }
-    0
 }
 
-/// Rotate all parts together, including feet, ears, head and tail.
-pub fn part(x: int, y: int, heading: int, distance: int) -> int {
-    if x < 0 || x > 4 || y < 0 || y > 4 { return 0 }
-    if heading == 2 { return north(4 - x, 4 - y, distance) }
-    if heading == 3 { return north(4 - y, x, distance) }
-    if heading == 4 { return north(y, 4 - x, distance) }
-    north(x, y, distance)
-}
-
-/// One cell from two solid pixels. Both tiers have the same occupancy;
-/// plain feet carry four distinct contact marks instead of half-blocks.
+/// Exact cell silhouette on both tiers. Plain uses # for body/planted feet,
+/// | for the other contact, . for the tail; four leg columns remain visible.
 pub fn wolf_cell(x: int, y: int, heading: int, distance: int, t: int) -> int {
-    let top = part(x, y * 2, heading, distance)
-    let bottom = part(x, y * 2 + 1, heading, distance)
-    if top == 0 && bottom == 0 { return 0 }
-    if t == tier.PLAIN {
-        if top == 2 || bottom == 2 {
-            return if heading == 1 {
-                94
-            } else if heading == 2 {
-                118
-            } else if heading == 3 {
-                60
-            } else {
-                62
-            }
-        }
-        if (top == 4 || bottom == 4) && (top == 0 || top == 4) && (bottom == 0 || bottom == 4) {
-            let f = leg_phase(distance)
-            return if f == 0 then 47 else if f == 1 then 124 else if f == 2 then 92 else 95
-        }
-        if top == 5 || bottom == 5 { return 126 }
-        return 35
-    }
-    if top != 0 && bottom != 0 then 9608 else if top != 0 then 9600 else 9604
+    let m = mask_at(x, y, heading, distance)
+    if m == 0 { return 0 }
+    if t == tier.RICH { return glyph(m) }
+    let (ex, ey) = east_coordinates(x, y, heading)
+    let kind = east_part(ex, ey)
+    if kind == 5 { return 46 }
+    if kind == 4 { return if east_mask(ex, ey, distance) == 5 then 124 else 35 }
+    35
 }
 
-/// Original long torso, forward head, ears, feet and swaying tail. Never
-/// exceeds five by three; leader bright/bold, followers grey, newcomers gold.
+/// Draw centred in a seven-by-seven logical cell; the sheet itself is 7x3
+/// east/west or 3x7 north/south. Leader stays brighter/bold, newcomers gold.
 pub fn wolf(
     mut g: grid.Grid,
     row: int,
@@ -83,15 +128,17 @@ pub fn wolf(
     let fg = if t == tier.PLAIN {
         if runner then 11 else if leader then 15 else 7
     } else if runner then 179 else if leader then 231 else 247
-    for y in 0..3 {
-        for x in 0..5 {
+    let top = row + (CELL_SPAN - height(heading)) / 2
+    let left = col + (CELL_SPAN - width(heading)) / 2
+    for y in 0..height(heading) {
+        for x in 0..width(heading) {
             let cp = wolf_cell(x, y, heading, distance, t)
             if cp != 0 {
-                let old = grid.at(g, row + y, col + x)
+                let old = grid.at(g, top + y, left + x)
                 grid.put(
                     mut g,
-                    row + y,
-                    col + x,
+                    top + y,
+                    left + x,
                     grid.cell(cp, fg, old.bg, if leader then grid.ATTR_BOLD else 0),
                 )
             }

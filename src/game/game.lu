@@ -8,6 +8,7 @@ use input
 use probe
 use replay
 use sim
+use sprites
 use fixtures
 use std.env
 use std.fs
@@ -158,7 +159,7 @@ fn options() -> Options ! {parse} {
 }
 
 // Engine term.open fixes 80x24. Construct its public Term after the same
-// std checks to honour trail's 40x12 minimum; enter/leave remain engine-owned.
+// std checks to honour trail's 40x16 minimum; enter/leave remain engine-owned.
 fn open_terminal() -> term.Term ! {io, not_tty, dumb, small} {
     let out = fs.stdout()
     if !(std_io.is_terminal(fs.stdin()) else false) || !(std_io.is_terminal(out) else false) {
@@ -170,7 +171,7 @@ fn open_terminal() -> term.Term ! {io, not_tty, dumb, small} {
     let size = std_term.size(out) else |_| { return io }
     let cols = if size.columns == 0 then 80 else size.columns
     let rows = if size.rows == 0 then 24 else size.rows
-    if cols < 40 || rows < 12 { return small }
+    if cols < 40 || rows < 16 { return small }
     term.Term {
         saved: mode,
         raw: false,
@@ -183,7 +184,7 @@ fn open_terminal() -> term.Term ! {io, not_tty, dumb, small} {
 }
 
 fn valid_size(cols: int, rows: int) -> bool {
-    cols >= 40 && rows >= 12 && cols <= 400 && rows <= 120
+    cols >= 40 && rows >= 16 && cols <= 400 && rows <= 120
 }
 
 fn source_for(mut o: Options) -> replay.Replay ! {parse, io} {
@@ -201,12 +202,12 @@ fn source_for(mut o: Options) -> replay.Replay ! {parse, io} {
     if !o.size_set { o.cols = source.cols; o.rows = source.rows }
     if !o.tier_set { o.glyph_tier = source.tier }
     if !valid_size(o.cols, o.rows) {
-        eprint("trail: small: minimum 40x12, maximum 400x120")
+        eprint("trail: small: minimum 40x16, maximum 400x120")
         return parse
     }
     for event in source.events {
         if event.key == replay.EV_SIZE && !valid_size(event.cols, event.rows) {
-            eprint("trail: small: replay resize outside 40x12..400x120")
+            eprint("trail: small: replay resize outside 40x16..400x120")
             return parse
         }
         if event.key >= replay.EV_ARG && (event.arg < 1 || event.arg > 10) { return parse }
@@ -249,7 +250,12 @@ fn headless_run(mut o: Options) -> int {
     let source = source_for(mut o) else |_| { return 2 }
     if o.dump == "" { eprint("trail: --headless requires --dump DIR"); return 2 }
     fs.create_dir_all(o.dump) else |_| { return 2 }
-    var s = sim.new(o.seed, o.cols / 5, (o.rows - 2) / 3, o.no_title)
+    var s = sim.new(
+        o.seed,
+        o.cols / sprites.CELL_SPAN,
+        (o.rows - 2) / sprites.CELL_SPAN,
+        o.no_title,
+    )
     var running = true
     while s.tick < o.frames && running {
         region scratch {
@@ -285,8 +291,12 @@ fn study_run(o: Options) -> int {
     for size in [80, 200] {
         for t in [tier.RICH, tier.PLAIN] {
             region scratch {
-                let g = art.study(o.seed, size, if size == 80 then 24 else 60, t)
-                headless.write_frame(o.dump, "sheet-{size}-{tier.name(t)}", g) else |_| { return 2 }
+                for h in 1..5 {
+                    let g = art.study(o.seed, size, if size == 80 then 24 else 60, t, h)
+                    headless.write_frame(o.dump, "heading-{h}-{size}-{tier.name(t)}", g) else |_| {
+                        return 2
+                    }
+                }
                 let props = art.study_props(o.seed, size, if size == 80 then 24 else 60, t)
                 headless.write_frame(o.dump, "props-{size}-{tier.name(t)}", props) else |_| {
                     return 2
@@ -298,7 +308,7 @@ fn study_run(o: Options) -> int {
 }
 
 fn bench_run(o: Options) -> int {
-    var s = sim.new(o.seed, o.cols / 5, (o.rows - 2) / 3, true)
+    var s = sim.new(o.seed, o.cols / sprites.CELL_SPAN, (o.rows - 2) / sprites.CELL_SPAN, true)
     fixtures.scene(mut s, 10)
     var prev = grid.new(o.rows, o.cols)
     var pen = grid.pen_new()
@@ -343,7 +353,7 @@ fn reset_layout(mut prev: grid.Grid, cols: int, rows: int) {
 
 fn live(mut o: Options) -> int {
     var t = open_terminal() else |e| {
-        eprint("trail: {e} (minimum 40x12; stdin/stdout must be a terminal; TERM must not be dumb)")
+        eprint("trail: {e} (minimum 40x16; stdin/stdout must be a terminal; TERM must not be dumb)")
         return 2
     }
     if !o.tier_set && o.script == "" {
@@ -352,7 +362,7 @@ fn live(mut o: Options) -> int {
     if !o.size_set && o.script == "" { o.cols = t.cols; o.rows = t.rows }
     let source = source_for(mut o) else |_| { return 2 }
     if !valid_size(o.cols, o.rows) || o.cols > t.cols || o.rows > t.rows {
-        eprint("trail: small: field must fit terminal, minimum 40x12, maximum 400x120")
+        eprint("trail: small: field must fit terminal, minimum 40x16, maximum 400x120")
         return 2
     }
     for event in source.events {
@@ -361,7 +371,12 @@ fn live(mut o: Options) -> int {
             return 2
         }
     }
-    var s = sim.new(o.seed, o.cols / 5, (o.rows - 2) / 3, o.no_title)
+    var s = sim.new(
+        o.seed,
+        o.cols / sprites.CELL_SPAN,
+        (o.rows - 2) / sprites.CELL_SPAN,
+        o.no_title,
+    )
     var recorded = replay.new(o.seed, o.glyph_tier, o.cols, o.rows)
     if o.no_title { replay.push_key(mut recorded, 0, 8) }
     term.enter(mut t) else |_| { term.leave(mut t); return 2 }
@@ -537,18 +552,39 @@ fn selftest() -> int {
 pub fn run() -> int {
     let args = env.args()
     if args.len == 1 && args[0] == "--probe-glyphs" {
-        return probe.run("trail", [183, 9472, 9474, 9600, 9604, 9608, 9642, 9670])
+        return probe.run(
+            "trail",
+            [
+                183,
+                9472,
+                9474,
+                9600,
+                9604,
+                9608,
+                9612,
+                9616,
+                9622,
+                9623,
+                9624,
+                9625,
+                9628,
+                9629,
+                9631,
+                9642,
+                9670,
+            ],
+        )
     }
     if args.len == 1 && args[0] == "--selftest" { return selftest() }
     if args.len == 1 && (args[0] == "--help" || args[0] == "-h") {
         print(
-            "trail --seed N --size WxH --plain --replay FILE --record FILE\nArrows turn; Space pauses; Enter or any mapped key starts/retries; q/Esc quits. Minimum 40x12.\nHeadless: --headless --script FILE --frames N --every K --dump DIR\nArt: --art-study --dump DIR; performance: --bench --size WxH --tier rich|plain",
+            "trail --seed N --size WxH --plain --replay FILE --record FILE\nArrows turn; Space pauses; Enter or any mapped key starts/retries; q/Esc quits. Minimum 40x16.\nHeadless: --headless --script FILE --frames N --every K --dump DIR\nArt: --art-study --dump DIR; performance: --bench --size WxH --tier rich|plain",
         )
         return 0
     }
     var o = options() else |_| { eprint("trail: parse: invalid option (try --help)"); return 2 }
     if !valid_size(o.cols, o.rows) {
-        eprint("trail: small: minimum 40x12, maximum 400x120")
+        eprint("trail: small: minimum 40x16, maximum 400x120")
         return 2
     }
     if o.apply != "" {
