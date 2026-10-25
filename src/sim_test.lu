@@ -8,6 +8,15 @@ fn place(mut s: sim.State, x: int, y: int, heading: int) {
     (mut s.meat).reset()
 }
 
+fn seek_roll(mut seed: int, wanted: bool) {
+    for _trial in 0..1000 {
+        var probe = seed
+        if sim.hits(sim.d20(mut probe)) == wanted { return }
+        let _roll = sim.d20(mut seed)
+    }
+    assert(false, "seeded stream never produced required strike outcome")
+}
+
 fn test_wrap_all_four_edges_both_axes() {
     var s = sim.new(7, 16, 7, true)
     for y in 0..7 {
@@ -63,11 +72,7 @@ fn test_running_newcomer_is_immune_to_eagle() {
     sim.summon(mut s)
     s.runners[0].age = 12
     // Find the next seeded hit without changing the strike path.
-    while true {
-        var probe = s.roll_rng
-        if sim.hits(sim.d20(mut probe)) { break }
-        let _r = sim.d20(mut s.roll_rng)
-    }
+    seek_roll(mut s.roll_rng, true)
     sim.strike(mut s)
     assert(s.length == 0 && s.phase == 2 && sim.pending(s) == 1 && s.runners[0].age == 12)
 }
@@ -91,18 +96,10 @@ fn test_d20_distribution_10000_seeded_strikes() {
 
 fn test_pack_of_one_death_and_miss() {
     var s = sim.new(4, 16, 7, true)
-    while true {
-        var probe = s.roll_rng
-        if !sim.hits(sim.d20(mut probe)) { break }
-        let _r = sim.d20(mut s.roll_rng)
-    }
+    seek_roll(mut s.roll_rng, false)
     sim.strike(mut s)
     assert(s.length == 1 && s.phase == 1 && s.survived == 1 && s.score == 25)
-    while true {
-        var probe = s.roll_rng
-        if sim.hits(sim.d20(mut probe)) { break }
-        let _r = sim.d20(mut s.roll_rng)
-    }
+    seek_roll(mut s.roll_rng, true)
     sim.strike(mut s)
     assert(s.length == 0 && s.phase == 2 && s.death == 2)
 }
