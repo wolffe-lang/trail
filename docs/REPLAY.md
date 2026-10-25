@@ -37,7 +37,7 @@ last event, prints `verified score N`, or fails with `UNVERIFIED` and both
 scores. A shorter prefix does not claim verification. `--frames N`,
 `--every K` and `--from T` select snapshots; `final.txt`, `final.sty` and
 `final.state` always describe the endpoint. The `.state` file contains
-tick, rule counters, four seam counts, wolves and meat.
+tick, rule counters, four seam counts, wolves, each wolf's travelled-cell gait counter, and meat.
 
 ## Fixtures are not recordings
 

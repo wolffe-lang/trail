@@ -85,3 +85,14 @@ each verify score 100. Fixture files are not recordings.
 These are the initial values from 2026-10-25. Pace, meat count and cadence
 are proposed tuning values; self-collision and the fixed strike odds are
 settled rules. Play can tune the former without quietly changing the latter.
+
+## Distance-driven gait (2026-10-25 play revision)
+
+The five-by-three footprint and every collision rule stay unchanged. Each
+pack member has a separate travelled-cell counter incremented only after
+a successful cell move, including a seam crossing. Its leg phase is
+distance modulo four; its tail phase is floor(distance / four) modulo
+two. Newcomers accumulate actual approach distance in 1/256-cell units
+and retain its whole-cell component when they join. Pause advances none
+of these counters or approach positions. The body uses the same original
+turned mask in every heading, with long torso, forward head/ears and tail.
