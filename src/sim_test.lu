@@ -184,6 +184,8 @@ fn test_same_tick_turn_order_and_retry() {
     (mut keys).push(4)
     sim.step(mut s, keys)
     assert(s.heading == 4)
+    sim.step(mut s, List[int]())
+    assert(s.heading == 4)
     let tick = s.tick
     s.phase = 2
     s.score = 500

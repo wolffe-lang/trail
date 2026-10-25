@@ -313,8 +313,9 @@ pub fn step(mut s: State, keys: List[int]) {
         }
     }
     if s.phase == 1 && !s.paused {
-        var latest = -1
-        var wanted = 0
+        // A retired older hold must not undo a newer latched corner.
+        var latest = s.holds[s.heading - 1].last
+        var wanted = s.heading
         var i = 0
         while i < 4 {
             if input.held(s.holds[i], s.tick) && s.holds[i].last > latest {
