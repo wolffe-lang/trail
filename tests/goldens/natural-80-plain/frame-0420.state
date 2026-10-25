@@ -1,19 +1,34 @@
 tick 420 age 420 phase 1 score 1500 length 15 longest 15 pending 1 eaten 15 survived 0 strikes 0 roll 0 eagle_age -1
 wrap 0 1 2 0
 wolf 14 0 3
+gait 0 76
 wolf 15 0 1
+gait 1 79
 wolf 15 1 1
+gait 2 77
 wolf 15 2 3
+gait 3 71
 wolf 0 2 3
+gait 4 75
 wolf 1 2 1
+gait 5 56
 wolf 1 3 1
+gait 6 60
 wolf 1 4 1
+gait 7 53
 wolf 1 5 3
+gait 8 45
 wolf 2 5 2
+gait 9 39
 wolf 2 4 2
+gait 10 41
 wolf 2 3 2
+gait 11 52
 wolf 2 2 3
+gait 12 21
 wolf 3 2 3
+gait 13 20
 wolf 4 2 3
+gait 14 13
 meat 7 3
 meat 8 0

@@ -38,6 +38,11 @@ def main():
         miss, _, miss_screen = run(bin,case('miss'))
         assert miss['length'] == 3 and 8 <= miss['roll'] <= 20 and miss['survived'] == 1 and miss['score'] == 25
         assert 'miss' in miss_screen
+        for heading,word in enumerate(('up','down','left','right'),1):
+            st,text,_=run(bin,case('stride-'+word),8)
+            assert st['phase']==1 and st['length']==1
+            assert re.search(r'^gait 0 1$',text,re.M),text
+            assert int(re.search(r'^wolf \d+ \d+ (\d+)$',text,re.M)[1])==heading
         dead, _, screen = run(bin,case('death'))
         assert dead['phase'] == 2 and 'THE TRAIL ENDS' in screen
         for i,name in enumerate(('up','down','left','right')):
