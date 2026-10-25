@@ -1,0 +1,207 @@
+check-fmt: canonical
+test src/art_test.lu::test_wolf_is_one_rotated_silhouette_and_four_legs ... ok
+test src/art_test.lu::test_floor_is_visible_soil_with_seeded_rocks_on_both_tiers ... ok
+test src/art_test.lu::test_frame_plain_footprints_meat_and_leader ... ok
+test src/clock/clock_test.lu::test_no_tick_before_its_time ... ok
+test src/clock/clock_test.lu::test_one_tick_on_time ... ok
+test src/clock/clock_test.lu::test_late_frames_drop_renders_not_ticks ... ok
+test src/clock/clock_test.lu::test_ms_until_rounds_up ... ok
+test src/clock/clock_test.lu::test_thirty_ticks_a_second ... ok
+test src/grid/grid_test.lu::test_empty_diff_writes_nothing ... ok
+test src/grid/grid_test.lu::test_one_cell_diff ... ok
+test src/grid/grid_test.lu::test_full_repaint_is_contiguous ... ok
+test src/grid/grid_test.lu::test_style_run_sets_sgr_once ... ok
+test src/grid/grid_test.lu::test_rgb_dialect ... ok
+test src/grid/grid_test.lu::test_sixteen_dialect_bright ... ok
+test src/grid/grid_test.lu::test_utf8_lengths ... ok
+test src/grid/grid_test.lu::test_property_apply_diff_equals_next ... ok
+test src/grid/grid_test.lu::test_property_holds_in_the_rgb_dialect ... ok
+test src/grid/grid_test.lu::test_model_wraps_and_scrolls ... ok
+test src/grid/grid_test.lu::test_model_private_modes ... ok
+test src/grid/grid_test.lu::test_model_malformed_utf8 ... ok
+test src/grid/grid_test.lu::test_dump_text_and_styles ... ok
+test src/grid/grid_test.lu::test_plain_ok ... ok
+test src/grid/grid_test.lu::test_bounds_are_soft ... ok
+test src/input/input_test.lu::test_csi_arrows ... ok
+test src/input/input_test.lu::test_ss3_arrows ... ok
+test src/input/input_test.lu::test_shift_arrows_are_their_own_keys ... ok
+test src/input/input_test.lu::test_other_modifiers_are_the_bare_arrow ... ok
+test src/input/input_test.lu::test_plain_keys ... ok
+test src/input/input_test.lu::test_lone_esc_waits_for_the_timeout ... ok
+test src/input/input_test.lu::test_esc_then_bracket_late_is_still_a_sequence ... ok
+test src/input/input_test.lu::test_esc_then_plain_byte_is_esc_and_the_byte ... ok
+test src/input/input_test.lu::test_ignored_forms ... ok
+test src/input/input_test.lu::test_unknown_bytes_are_dropped_and_counted ... ok
+test src/input/input_test.lu::test_two_sequences_in_one_read ... ok
+test src/input/input_test.lu::test_a_tap_holds_for_the_tap_ticks ... ok
+test src/input/input_test.lu::test_a_repeat_run_releases_one_interval_after_the_last_press ... ok
+test src/replay/replay_test.lu::test_vocabulary ... ok
+test src/replay/replay_test.lu::test_parse_sample ... ok
+test src/replay/replay_test.lu::test_round_trip ... ok
+test src/replay/replay_test.lu::test_refusals ... ok
+test src/replay/replay_test.lu::test_parse_size ... ok
+test src/replay/replay_test.lu::test_start_is_read_written_and_defaults_to_zero ... ok
+test src/replay/replay_test.lu::test_the_score_comment_is_written_read_and_optional ... ok
+test src/sim_test.lu::test_wrap_all_four_edges_both_axes ... ok
+test src/sim_test.lu::test_reverse_refused_and_fast_double_turn_refused ... ok
+test src/sim_test.lu::test_summons_arrives_at_departing_tail ... ok
+test src/sim_test.lu::test_running_newcomer_is_immune_to_eagle ... ok
+d20: 3403/10000 hits; expected 3350..3650; bins [497, 459, 499, 521, 471, 482, 474, 490, 504, 525, 503, 479, 542, 536, 477, 522, 486, 509, 497, 527]
+test src/sim_test.lu::test_d20_distribution_10000_seeded_strikes ... ok
+test src/sim_test.lu::test_pack_of_one_death_and_miss ... ok
+test src/sim_test.lu::test_meat_eating_and_open_placement ... ok
+test src/sim_test.lu::test_pace_and_cadence_and_first_eagle ... ok
+test src/sim_test.lu::test_telegraph_lasts_30_ticks_and_exit_18 ... ok
+test src/sim_test.lu::test_self_collision_and_departing_tail ... ok
+test src/sim_test.lu::test_pause_and_seed_determinism ... ok
+test src/sim_test.lu::test_same_tick_turn_order_and_retry ... ok
+test src/world/world_test.lu::test_deterministic ... ok
+test src/world/world_test.lu::test_seeds_differ ... ok
+test src/world/world_test.lu::test_noise_bounds_and_continuity ... ok
+test src/world/world_test.lu::test_forest_density_rises ... ok
+test src/world/world_test.lu::test_clearing_reads_and_a_stand_is_the_woods_with_more_trunks ... ok
+test src/world/world_test.lu::test_density_bands_are_ordered ... ok
+test src/world/world_test.lu::test_hash_range ... ok
+wolf test: 62 passed; 0 failed; 0 rejected; 0 unsupported; 0 filtered out
+test: 0 SKIP lines
+build: target/native/trail
+build: target/release/trail
+selftest: 0 failures; d20 3403/10000; decoder splits and diff property
+goldens: death-200-rich ok
+goldens: death-200-plain ok
+goldens: death-80-rich ok
+goldens: death-80-plain ok
+goldens: hit-200-rich ok
+goldens: hit-200-plain ok
+goldens: hit-80-rich ok
+goldens: hit-80-plain ok
+goldens: miss-200-rich ok
+goldens: miss-200-plain ok
+goldens: miss-80-rich ok
+goldens: miss-80-plain ok
+trail: verified score 2500
+goldens: natural-80-rich ok
+trail: verified score 2500
+goldens: natural-80-plain ok
+goldens: one-200-rich ok
+goldens: one-200-plain ok
+goldens: one-80-rich ok
+goldens: one-80-plain ok
+goldens: summons-200-rich ok
+goldens: summons-200-plain ok
+goldens: summons-80-rich ok
+goldens: summons-80-plain ok
+goldens: telegraph-200-rich ok
+goldens: telegraph-200-plain ok
+goldens: telegraph-80-rich ok
+goldens: telegraph-80-plain ok
+goldens: title-200-rich ok
+goldens: title-200-plain ok
+goldens: title-80-rich ok
+goldens: title-80-plain ok
+goldens: wrap-down-200-rich ok
+goldens: wrap-down-200-plain ok
+goldens: wrap-down-80-rich ok
+goldens: wrap-down-80-plain ok
+goldens: wrap-left-200-rich ok
+goldens: wrap-left-200-plain ok
+goldens: wrap-left-80-rich ok
+goldens: wrap-left-80-plain ok
+goldens: wrap-right-200-rich ok
+goldens: wrap-right-200-plain ok
+goldens: wrap-right-80-rich ok
+goldens: wrap-right-80-plain ok
+goldens: wrap-up-200-rich ok
+goldens: wrap-up-200-plain ok
+goldens: wrap-up-80-rich ok
+goldens: wrap-up-80-plain ok
+goldens: art ok
+pty: quit ok (linux x86_64, exit 0, 29813 bytes captured)
+pty: ctrl-c ok (linux x86_64, exit 0, 29813 bytes captured)
+pty: trap ok (linux x86_64, exit 134, 28572 bytes captured)
+pty: agree-rich ok (linux x86_64, exit 0, 28947 bytes captured)
+pty: agree-plain ok (linux x86_64, exit 0, 5474 bytes captured)
+pty: title-pause ok (linux x86_64, exit 0, 30503 bytes captured)
+pty: minimum-40x12 ok (linux x86_64, exit 0, 1945 bytes captured)
+pty: escape ok (linux x86_64, exit 0, 28947 bytes captured)
+pty: resize ok (linux x86_64, exit 0, 75521 bytes captured)
+pty: record-roundtrip ok (linux x86_64, exit 0, 29371 bytes captured)
+check-linux: green
+goldens: death-200-rich ok
+goldens: death-200-plain ok
+goldens: death-80-rich ok
+goldens: death-80-plain ok
+goldens: hit-200-rich ok
+goldens: hit-200-plain ok
+goldens: hit-80-rich ok
+goldens: hit-80-plain ok
+goldens: miss-200-rich ok
+goldens: miss-200-plain ok
+goldens: miss-80-rich ok
+goldens: miss-80-plain ok
+trail: verified score 2500
+goldens: natural-80-rich ok
+trail: verified score 2500
+goldens: natural-80-plain ok
+goldens: one-200-rich ok
+goldens: one-200-plain ok
+goldens: one-80-rich ok
+goldens: one-80-plain ok
+goldens: summons-200-rich ok
+goldens: summons-200-plain ok
+goldens: summons-80-rich ok
+goldens: summons-80-plain ok
+goldens: telegraph-200-rich ok
+goldens: telegraph-200-plain ok
+goldens: telegraph-80-rich ok
+goldens: telegraph-80-plain ok
+goldens: title-200-rich ok
+goldens: title-200-plain ok
+goldens: title-80-rich ok
+goldens: title-80-plain ok
+goldens: wrap-down-200-rich ok
+goldens: wrap-down-200-plain ok
+goldens: wrap-down-80-rich ok
+goldens: wrap-down-80-plain ok
+goldens: wrap-left-200-rich ok
+goldens: wrap-left-200-plain ok
+goldens: wrap-left-80-rich ok
+goldens: wrap-left-80-plain ok
+goldens: wrap-right-200-rich ok
+goldens: wrap-right-200-plain ok
+goldens: wrap-right-80-rich ok
+goldens: wrap-right-80-plain ok
+goldens: wrap-up-200-rich ok
+goldens: wrap-up-200-plain ok
+goldens: wrap-up-80-rich ok
+goldens: wrap-up-80-plain ok
+goldens: art ok
+gameplay: recorded recorded-200-plain.pk: score 100, length 2, meals 1 verified
+gameplay: recorded recorded-80-rich.pk: score 100, length 2, meals 1 verified
+gameplay: natural ordinary-key run: 25 meals, 23 wolves, first eagle hit, score 2500
+gameplay: trail: scene semantics, four seams, score verification, refusals green
+gameplay: recorded recorded-200-plain.pk: score 100, length 2, meals 1 verified
+gameplay: recorded recorded-80-rich.pk: score 100, length 2, meals 1 verified
+gameplay: natural ordinary-key run: 25 meals, 23 wolves, first eagle hit, score 2500
+gameplay: trail: scene semantics, four seams, score verification, refusals green
+glyphs: eight documented non-ASCII rich glyphs, sets equal
+build: target/release/trail
+perf: host Linux x86_64, slack x1, bench args: (none)
+bench 80x24 rich frames 300 avg_us 32 p99_us 52 max_us 114
+perf: 80x24 rich avg 32 us < 1000 us ok
+bench 80x24 plain frames 300 avg_us 37 p99_us 62 max_us 82
+perf: 80x24 plain avg 37 us < 1000 us ok
+bench 200x60 rich frames 300 avg_us 164 p99_us 246 max_us 789
+perf: 200x60 rich avg 164 us < 4000 us ok
+bench 200x60 plain frames 300 avg_us 151 p99_us 194 max_us 315
+perf: 200x60 plain avg 151 us < 4000 us ok
+perf-idle: idle 300 voluntary context switches in 10 s at a standstill (bar 240..360) ok
+perf-idle: latency samples ms (key write to the carrying frame's trace line): 26 31 26 25 32 26 25 32 26 25 31 26 25 31 26 25 32 26 25 32
+perf-idle: latency inner ms (the key's read to the frame's write): 26.2 31.2 26.2 25.2 32.2 26.2 25.2 32.2 26.2 25.2 31.2 26.2 25.2 31.3 26.2 25.2 32.3 26.2 25.2 32.3
+perf-idle: latency run's closing line: trail: ended by the quit key; score 0, longest 1, ticks 226
+perf-idle: latency median 26.3 ms p90 32.4 ms max 32.4 ms over 20 keys (bars median 40, p90 70 ms) ok
+perf-idle: idle 300 voluntary context switches in 10 s at a standstill (bar 240..360) ok
+perf-idle: latency samples ms (key write to the carrying frame's trace line): 25 31 26 25 31 26 25 31 26 25 32 26 25 32 26 26 31 26 25 32
+perf-idle: latency inner ms (the key's read to the frame's write): 25.2 31.3 26.2 25.2 31.2 26.2 25.2 31.3 26.2 25.2 32.3 26.2 25.2 32.3 26.2 26.2 31.2 26.2 25.2 32.2
+perf-idle: latency run's closing line: trail: ended by the quit key; score 0, longest 1, ticks 226
+perf-idle: latency median 26.3 ms p90 32.3 ms max 32.4 ms over 20 keys (bars median 40, p90 70 ms) ok

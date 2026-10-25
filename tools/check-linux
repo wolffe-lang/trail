@@ -9,3 +9,5 @@ export HOME="$ROOT/target/test-home"
 .lair/tools/goldens --bin target/native/trail
 python3 -I tools/gameplay.py --bin target/native/trail
 python3 -I tools/gameplay.py --bin target/release/trail
+
+python3 -I tools/glyphs.py

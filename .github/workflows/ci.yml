@@ -129,6 +129,7 @@ jobs:
           .lair/tools/goldens --bin target/native/trail
           python3 -I tools/gameplay.py --bin target/native/trail
           python3 -I tools/gameplay.py --bin target/release/trail
+          python3 -I tools/glyphs.py
       - name: the pty rows
         env:
           LAIR_MEMORY_GATE: '0'

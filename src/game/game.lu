@@ -5,6 +5,7 @@ use clock
 use grid
 use headless
 use input
+use probe
 use replay
 use sim
 use fixtures
@@ -195,6 +196,7 @@ fn source_for(mut o: Options) -> replay.Replay ! {parse, io} {
         eprint("trail: parse: invalid replay {o.script}")
         return parse
     }
+    if source.start != 0 { eprint("trail: parse: start header must be zero"); return parse }
     if !o.seed_set { o.seed = source.seed }
     if !o.size_set { o.cols = source.cols; o.rows = source.rows }
     if !o.tier_set { o.glyph_tier = source.tier }
@@ -346,6 +348,12 @@ fn live(mut o: Options) -> int {
     if !valid_size(o.cols, o.rows) || o.cols > t.cols || o.rows > t.rows {
         eprint("trail: small: field must fit terminal, minimum 40x12, maximum 400x120")
         return 2
+    }
+    for event in source.events {
+        if event.key == replay.EV_SIZE && (event.cols > t.cols || event.rows > t.rows) {
+            eprint("trail: small: replay layout exceeds terminal")
+            return 2
+        }
     }
     var s = sim.new(o.seed, o.cols / 5, (o.rows - 2) / 3, o.no_title)
     var recorded = replay.new(o.seed, o.glyph_tier, o.cols, o.rows)
@@ -522,6 +530,9 @@ fn selftest() -> int {
 /// Parse the command line and run trail; return 2 for bad input or I/O.
 pub fn run() -> int {
     let args = env.args()
+    if args.len == 1 && args[0] == "--probe-glyphs" {
+        return probe.run("trail", [183, 9472, 9474, 9600, 9604, 9608, 9642, 9670])
+    }
     if args.len == 1 && args[0] == "--selftest" { return selftest() }
     if args.len == 1 && (args[0] == "--help" || args[0] == "-h") {
         print(
