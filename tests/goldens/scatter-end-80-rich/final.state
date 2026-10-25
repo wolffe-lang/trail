@@ -1,0 +1,11 @@
+tick 31 age 1 phase 2 score 0 length 4 longest 4 pending 0 eaten 0 survived 0 strikes 0 roll 0 eagle_age -1 scatter_age 30
+wrap 0 0 0 0
+wolf 2 1 1
+gait 0 0
+wolf 1 1 4
+gait 1 0
+wolf 1 2 1
+gait 2 0
+wolf 2 2 3
+gait 3 0
+meat 2 0

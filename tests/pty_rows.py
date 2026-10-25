@@ -1,6 +1,7 @@
 """Game rows: title/start/pause, minimum, resize, Escape and recorder round-trip."""
 import fcntl
 import os
+import re
 from pathlib import Path
 import struct
 import subprocess
@@ -76,4 +77,17 @@ def record(bin,ctx):
     if p.returncode or 'verified score' not in p.stderr:problems.append('recorded score did not verify: '+p.stderr)
     return s,problems
 
-ROWS={'title-pause':title,'title-cr':title_cr,'title-space':title_space,'minimum-40x16':minimum,'escape':escape,'resize':resize,'record-roundtrip':record}
+def scatter_card(bin,ctx):
+    case=Path(ctx.ROOT)/'tests/cases/scatter-80.pk'
+    s=ctx.Session([bin,'--replay',str(case),'--ticks','36','--trace'],24,80,ctx.env_for())
+    s.finish(timeout=8)
+    problems=[];ctx.common_checks(s,0,problems)
+    states=[tuple(map(int,x)) for x in re.findall(rb'trace state tick (\d+) phase (\d+) scatter (\d+)',s.err)]
+    scattered=[x for x in states if x[1]==3]
+    cards=[x for x in states if x[1]==2]
+    if not scattered or not cards:problems.append('scatter/card phases missing from actual rendered frames')
+    if any(x[2]<30 for x in cards):problems.append('death card rendered before thirty scatter ticks')
+    if 'THE TRAIL ENDS' not in ctx.screen_text(bin,s.out):problems.append('final death card absent')
+    return s,problems
+
+ROWS={'scatter-before-card':scatter_card,'title-pause' :title,'title-cr':title_cr,'title-space':title_space,'minimum-40x16':minimum,'escape':escape,'resize':resize,'record-roundtrip':record}

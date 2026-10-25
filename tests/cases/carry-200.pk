@@ -1,0 +1,7 @@
+pk 1
+seed 7
+tier rich
+size 200x60
+# frames 15 every 15
+# Explicit death animation fixture.
+t 0 scene 12

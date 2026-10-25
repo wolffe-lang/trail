@@ -1,4 +1,4 @@
-tick 720 age 720 phase 1 score 1200 length 12 longest 12 pending 1 eaten 12 survived 0 strikes 0 roll 0 eagle_age 23
+tick 720 age 720 phase 1 score 1200 length 12 longest 12 pending 1 eaten 12 survived 0 strikes 0 roll 0 eagle_age 23 scatter_age 0
 wrap 3 1 1 1
 wolf 12 1 3
 gait 0 119

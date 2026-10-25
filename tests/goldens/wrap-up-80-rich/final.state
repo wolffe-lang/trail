@@ -1,4 +1,4 @@
-tick 1 age 1 phase 1 score 0 length 1 longest 1 pending 0 eaten 0 survived 0 strikes 0 roll 0 eagle_age -1
+tick 1 age 1 phase 1 score 0 length 1 longest 1 pending 0 eaten 0 survived 0 strikes 0 roll 0 eagle_age -1 scatter_age 0
 wrap 1 0 0 0
 wolf 5 2 1
 gait 0 1

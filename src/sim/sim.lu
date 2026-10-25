@@ -9,6 +9,11 @@ pub struct Wolf { x: int, y: int, heading: int }
 /// One meal's summoned wolf, interpolated from an edge toward the moving tail.
 pub struct Runner { x: int, y: int, age: int, active: bool, px: int, py: int, distance: int }
 
+/// One scattered/captured wolf, positions in 1/256 cells.
+pub struct ScatterWolf { x:int, y:int, start_x:int, start_y:int, heading:int, speed:int, distance:int }
+/// Death animation duration after the first visible scatter frame.
+pub const SCATTER_TICKS:int=30
+
 /// A reproducible run. Storage is allocated once and bounded by field area.
 pub struct State {
     seed: int,
@@ -18,6 +23,9 @@ pub struct State {
     rows: int,
     wolves: List[Wolf],
     gaits: List[int],
+    scatter: List[ScatterWolf],
+    scatter_count:int,
+    scatter_age:int,
     front: int,
     length: int,
     heading: int,
@@ -125,6 +133,7 @@ pub fn new(seed: int, cols: int, rows: int, playing: bool) -> State {
     let normalized = wrap(seed, 2147483646) + 1
     var wolves = List[Wolf]()
     var gaits = List[int]()
+    var scatter=List[ScatterWolf]()
     var runners = List[Runner]()
     var holds = List[input.Hold]()
     var rolls = List[int]()
@@ -134,6 +143,7 @@ pub fn new(seed: int, cols: int, rows: int, playing: bool) -> State {
         (mut wolves).push(Wolf { x: cols / 2, y: rows / 2, heading: 4 })
         (mut runners).push(Runner { x: 0, y: 0, age: 0, active: false, px: 0, py: 0, distance: 0 })
         (mut gaits).push(0)
+        (mut scatter).push(ScatterWolf {x:0,y:0,start_x:0,start_y:0,heading:4,speed:0,distance:0})
         i += 1
     }
     for _k in 0..4 { (mut holds).push(input.hold_new()); (mut wraps).push(0) }
@@ -146,6 +156,7 @@ pub fn new(seed: int, cols: int, rows: int, playing: bool) -> State {
         rows: rows,
         wolves: wolves,
         gaits: gaits,
+        scatter:scatter, scatter_count:0, scatter_age:0,
         front: 0,
         length: 1,
         heading: 4,
@@ -249,8 +260,7 @@ pub fn advance(mut s: State) {
     while i < count {
         let w = wolf(s, i)
         if x == w.x && y == w.y {
-            s.phase = 2
-            s.death = 1
+            begin_scatter(mut s,1,x,y)
             return
         }
         i += 1
@@ -296,8 +306,8 @@ pub fn strike(mut s: State) {
     s.strikes += 1
     s.result_age = 45
     if hits(s.last_roll) {
+        if s.length==1 { let w=wolf(s,0); begin_scatter(mut s,2,w.x,w.y) }
         s.length -= 1
-        if s.length == 0 { s.phase = 2; s.death = 2 }
     } else {
         s.survived += 1
         s.score += 25
@@ -314,7 +324,7 @@ pub fn step(mut s: State, keys: List[int]) {
     }
     var pressed = 0
     for key in keys {
-        if s.phase != 1 && (key >= 1 && key <= 5 || key == 8 || key == 9) {
+        if (s.phase==0 || s.phase==2) && (key >= 1 && key <= 5 || key == 8 || key == 9) {
             if s.phase == 2 { restart(mut s) } else { s.phase = 1 }
             if key >= 1 && key <= 4 {
                 // The first heading is a choice, not a reversal into a pack.
@@ -331,6 +341,7 @@ pub fn step(mut s: State, keys: List[int]) {
             pressed = key
         }
     }
+    if s.phase==3 { scatter_step(mut s); s.tick+=1; return }
     if s.phase == 1 && !s.paused {
         // A retired older hold must not undo a newer latched corner.
         var latest = s.holds[s.heading - 1].last
@@ -398,6 +409,7 @@ pub fn restart(mut s: State) {
     s.result_age = 0
     s.roll_count = 0
     s.death = 0
+    s.scatter_count=0; s.scatter_age=0
     refill(mut s)
 }
 
@@ -424,4 +436,46 @@ fn run_in(mut s: State) {
 pub fn gait_distance(s: State, i: int) -> int {
     assert(i >= 0 && i < s.length, "gait index")
     s.gaits[i]
+}
+
+
+/// Start a seeded one-second scatter (cause 1) or carry-away (cause 2).
+/// Stop at field bounds instead of wrapping; the leader participates too.
+pub fn begin_scatter(mut s:State,cause:int,cx:int,cy:int) {
+    s.death=cause; s.phase=3; s.scatter_age=0
+    s.scatter_count=if cause==2 then 1 else s.length
+    for i in 0..s.scatter_count {
+        let w=wolf(s,i)
+        let dx=w.x-cx; let dy=w.y-cy
+        let toss=random(mut s.rng)
+        var h=if magnitude(dx)>magnitude(dy) || (magnitude(dx)==magnitude(dy) && toss%2==0) {
+            if dx<0 then 3 else 4
+        } else { if dy<0 then 1 else 2 }
+        if dx==0 && dy==0 { h=toss%4+1 }
+        if cause==2 { h=if s.eagle_edge==0 then 4 else if s.eagle_edge==1 then 3 else if s.eagle_edge==2 then 2 else 1 }
+        s.scatter[i]=ScatterWolf {x:w.x*256,y:w.y*256,start_x:w.x*256,start_y:w.y*256,
+            heading:h,speed:4+toss%4,distance:s.gaits[i]*256}
+    }
+    if SCATTER_TICKS==0 { s.phase=2 }
+}
+fn clamp(value:int,lo:int,hi:int)->int { if value<lo then lo else if value>hi then hi else value }
+fn scatter_step(mut s:State) {
+    s.scatter_age+=1
+    for i in 0..s.scatter_count {
+        let w=copy s.scatter[i]
+        var x=w.x; var y=w.y
+        if s.death==2 {
+            let tx=if w.heading==4 then (s.cols+2)*256 else if w.heading==3 then -3*256 else w.start_x
+            let ty=if w.heading==2 then (s.rows+2)*256 else if w.heading==1 then -3*256 else w.start_y
+            x=w.start_x+(tx-w.start_x)*s.scatter_age/30
+            y=w.start_y+(ty-w.start_y)*s.scatter_age/30
+        } else {
+            let step=w.speed*256/30
+            x=clamp(w.x+(if w.heading==4 then step else if w.heading==3 then -step else 0),0,(s.cols-1)*256)
+            y=clamp(w.y+(if w.heading==2 then step else if w.heading==1 then -step else 0),0,(s.rows-1)*256)
+            s.scatter[i].distance+=magnitude(x-w.x)+magnitude(y-w.y)
+        }
+        s.scatter[i].x=x; s.scatter[i].y=y
+    }
+    if s.scatter_age>=SCATTER_TICKS { s.phase=2 }
 }

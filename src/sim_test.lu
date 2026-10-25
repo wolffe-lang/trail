@@ -74,7 +74,7 @@ fn test_running_newcomer_is_immune_to_eagle() {
     // Find the next seeded hit without changing the strike path.
     seek_roll(mut s.roll_rng, true)
     sim.strike(mut s)
-    assert(s.length == 0 && s.phase == 2 && sim.pending(s) == 1 && s.runners[0].age == 12)
+    assert(s.length == 0 && s.phase == 3 && sim.pending(s) == 1 && s.runners[0].age == 12)
 }
 
 fn test_d20_distribution_10000_seeded_strikes() {
@@ -101,7 +101,7 @@ fn test_pack_of_one_death_and_miss() {
     assert(s.length == 1 && s.phase == 1 && s.survived == 1 && s.score == 25)
     seek_roll(mut s.roll_rng, true)
     sim.strike(mut s)
-    assert(s.length == 0 && s.phase == 2 && s.death == 2)
+    assert(s.length == 0 && s.phase == 3 && s.death == 2)
 }
 
 fn test_meat_eating_and_open_placement() {
@@ -161,7 +161,7 @@ fn test_self_collision_and_departing_tail() {
     assert(s.phase == 1)
     s.heading = 4
     sim.advance(mut s)
-    assert(s.phase == 2 && s.death == 1)
+    assert(s.phase == 3 && s.death == 1)
 }
 
 fn test_pause_and_seed_determinism() {
@@ -270,4 +270,26 @@ fn test_runner_arrival_keeps_final_contact_phase() {
     sim.advance(mut s)
     assert(s.length == 2 && !s.runners[0].active)
     assert(s.runners[0].distance == 1024 && sim.gait_distance(s, 1) == 4)
+}
+
+
+fn test_scatter_is_seeded_and_card_waits_thirty_ticks() {
+    var a=sim.new(7,11,3,true); var b=sim.new(7,11,3,true)
+    sim.begin_scatter(mut a,1,4,1); sim.begin_scatter(mut b,1,4,1)
+    assert(a.phase==3 && a.scatter_age==0 && a.scatter_count==a.length)
+    for _n in 0..29 { sim.step(mut a,List[int]()); sim.step(mut b,List[int]()) }
+    assert(a.phase==3 && a.scatter_age==29)
+    assert(a.scatter[0].x==b.scatter[0].x && a.scatter[0].y==b.scatter[0].y && a.scatter[0].distance==b.scatter[0].distance)
+    assert(a.scatter[0].distance>0)
+    sim.step(mut a,List[int]()); assert(a.phase==2 && a.scatter_age==30)
+}
+fn test_taken_last_wolf_is_carried_to_exit_before_card() {
+    var s=sim.new(7,11,3,true)
+    let w=sim.wolf(s,0); s.eagle_edge=0
+    sim.begin_scatter(mut s,2,w.x,w.y); s.length=0
+    let x=s.scatter[0].x
+    for _n in 0..15 { sim.step(mut s,List[int]()) }
+    assert(s.phase==3 && s.scatter[0].x>x)
+    for _n in 0..15 { sim.step(mut s,List[int]()) }
+    assert(s.phase==2 && s.scatter[0].x>=s.cols*256)
 }

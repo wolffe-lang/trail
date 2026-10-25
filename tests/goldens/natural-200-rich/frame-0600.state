@@ -1,4 +1,4 @@
-tick 600 age 600 phase 1 score 800 length 9 longest 9 pending 0 eaten 8 survived 0 strikes 0 roll 0 eagle_age -1
+tick 600 age 600 phase 1 score 800 length 9 longest 9 pending 0 eaten 8 survived 0 strikes 0 roll 0 eagle_age -1 scatter_age 0
 wrap 3 1 1 1
 wolf 17 7 4
 gait 0 94

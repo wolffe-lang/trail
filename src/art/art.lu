@@ -136,7 +136,7 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
         sprites.shadow(mut g, y, x, t)
         sprites.eagle(mut g, y - 3, x - 1, t)
     }
-    var i = s.length - 1
+    var i = if s.death==0 then s.length-1 else -1
     while i >= 0 {
         let w = sim.wolf(s, i)
         sprites.wolf(
@@ -151,7 +151,7 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
         )
         i -= 1
     }
-    if s.length > 0 {
+    if s.length>0 && s.death==0 {
         let tail = sim.wolf(s, s.length - 1)
         for r in s.runners {
             if r.active {
@@ -170,6 +170,13 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
             }
         }
     }
+    for k in 0..s.scatter_count {
+        let w=copy s.scatter[k]
+        let x=left+w.x*sprites.CELL_SPAN/256
+        let y=top+w.y*sprites.CELL_SPAN/256
+        sprites.wolf(mut g,y,x,w.heading,w.distance/256,k==0,false,t)
+        if s.death==2 { sprites.eagle(mut g,y-1,x,t) }
+    }
     let bg = if t == tier.PLAIN then 0 else 52
     draw.fill(mut g, 0, 0, 1, cols, grid.cell(32, 7, bg, 0))
     let roll = if s.last_roll == 0 {
@@ -182,7 +189,7 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
     } else {
         "pack {s.length}  score {s.score}  survived {s.survived}  {roll}"
     }
-    text(mut g, 0, 1, hud, t, true)
+    text(mut g,0,1,if s.phase==3 then (if s.death==1 then "the pack scatters" else "the eagle carries the last wolf") else hud,t,true)
     draw.fill(mut g, rows - 1, 0, 1, cols, grid.cell(32, 7, bg, 0))
     text(
         mut g,
