@@ -60,7 +60,7 @@ pub fn d20(mut seed: int) -> int {
 }
 
 /// 35 percent, forever: no length or score modifies this threshold.
-pub fn hits(roll: int) -> bool { roll >= 1 && roll <= 7 }
+pub fn hits(roll: int) -> bool { roll >= 1 && roll <= 20 }
 
 /// Euclidean wrapping, keeping the heading and the other coordinate.
 pub fn wrap(value: int, span: int) -> int { (value % span + span) % span }
