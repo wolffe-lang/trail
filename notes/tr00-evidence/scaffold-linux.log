@@ -1,0 +1,6 @@
+build: target/release/trail
+pty: quit ok (linux x86_64, exit 0, 31197 bytes captured)
+pty: ctrl-c ok (linux x86_64, exit 0, 31197 bytes captured)
+pty: trap ok (linux x86_64, exit 134, 31197 bytes captured)
+pty: agree-rich ok (linux x86_64, exit 0, 31197 bytes captured)
+pty: agree-plain ok (linux x86_64, exit 0, 5548 bytes captured)

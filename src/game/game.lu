@@ -1,4 +1,5 @@
 //! Game-owned command line and terminal lifecycle, on the pinned engine.
+
 use art
 use clock
 use grid
@@ -13,7 +14,7 @@ use std.term as std_term
 use term
 use tier
 
-pub struct Options {
+struct Options {
     seed: int,
     cols: int,
     rows: int,
@@ -38,7 +39,7 @@ pub struct Options {
     tier_set: bool,
 }
 
-pub fn vocab() -> replay.Vocab {
+fn vocab() -> replay.Vocab {
     var names = List[str]()
     for name in "none up down left right pause quit interrupt start restart".words() {
         (mut names).push(name)
@@ -57,11 +58,30 @@ fn mapped(k: int) -> int {
 }
 
 fn defaults() -> Options {
-    Options { seed: 7, cols: 80, rows: 24, glyph_tier: tier.RICH,
-        frames: 60, every: 10, from_tick: 0, ticks: -1, trap_at: -1,
-        dump: "", script: "", record: "", apply: "", headless_mode: false,
-        study: false, bench: false, no_title: false, trace: false, truecolor: true,
-        seed_set: false, size_set: false, tier_set: false }
+    Options {
+        seed: 7,
+        cols: 80,
+        rows: 24,
+        glyph_tier: tier.RICH,
+        frames: 60,
+        every: 10,
+        from_tick: 0,
+        ticks: -1,
+        trap_at: -1,
+        dump: "",
+        script: "",
+        record: "",
+        apply: "",
+        headless_mode: false,
+        study: false,
+        bench: false,
+        no_title: false,
+        trace: false,
+        truecolor: true,
+        seed_set: false,
+        size_set: false,
+        tier_set: false,
+    }
 }
 
 fn options() -> Options ! {parse} {
@@ -70,30 +90,57 @@ fn options() -> Options ! {parse} {
     var i = 0
     while i < args.len {
         let a = args[i]
-        if a == "--headless" { o.headless_mode = true }
-        else if a == "--art-study" { o.study = true }
-        else if a == "--bench" { o.bench = true }
-        else if a == "--no-title" { o.no_title = true }
-        else if a == "--trace" { o.trace = true }
-        else if a == "--no-truecolor" { o.truecolor = false }
-        else if a == "--plain" { o.glyph_tier = tier.PLAIN; o.tier_set = true }
-        else {
+        if a == "--headless" {
+            o.headless_mode = true
+        } else if a == "--art-study" {
+            o.study = true
+        } else if a == "--bench" {
+            o.bench = true
+        } else if a == "--no-title" {
+            o.no_title = true
+        } else if a == "--trace" {
+            o.trace = true
+        } else if a == "--no-truecolor" {
+            o.truecolor = false
+        } else if a == "--plain" {
+            o.glyph_tier = tier.PLAIN
+            o.tier_set = true
+        } else {
             i += 1
             if i >= args.len { return parse }
             let v = args[i]
-            if a == "--seed" { o.seed = v.to_int()?; o.seed_set = true }
-            else if a == "--size" { let (c, r) = replay.parse_size(v)?; o.cols = c; o.rows = r; o.size_set = true }
-            else if a == "--tier" { o.glyph_tier = tier.of_name(v)?; o.tier_set = true }
-            else if a == "--frames" { o.frames = v.to_int()? }
-            else if a == "--every" { o.every = v.to_int()? }
-            else if a == "--from" { o.from_tick = v.to_int()? }
-            else if a == "--ticks" { o.ticks = v.to_int()? }
-            else if a == "--trap-at" { o.trap_at = v.to_int()? }
-            else if a == "--dump" { o.dump = v }
-            else if a == "--script" || a == "--replay" { o.script = v }
-            else if a == "--record" { o.record = v }
-            else if a == "--apply" { o.apply = v }
-            else { return parse }
+            if a == "--seed" {
+                o.seed = v.to_int()?
+                o.seed_set = true
+            } else if a == "--size" {
+                let (c, r) = replay.parse_size(v)?
+                o.cols = c
+                o.rows = r
+                o.size_set = true
+            } else if a == "--tier" {
+                o.glyph_tier = tier.of_name(v)?
+                o.tier_set = true
+            } else if a == "--frames" {
+                o.frames = v.to_int()?
+            } else if a == "--every" {
+                o.every = v.to_int()?
+            } else if a == "--from" {
+                o.from_tick = v.to_int()?
+            } else if a == "--ticks" {
+                o.ticks = v.to_int()?
+            } else if a == "--trap-at" {
+                o.trap_at = v.to_int()?
+            } else if a == "--dump" {
+                o.dump = v
+            } else if a == "--script" || a == "--replay" {
+                o.script = v
+            } else if a == "--record" {
+                o.record = v
+            } else if a == "--apply" {
+                o.apply = v
+            } else {
+                return parse
+            }
         }
         i += 1
     }
@@ -105,7 +152,9 @@ fn options() -> Options ! {parse} {
 // std checks to honour trail's 40x12 minimum; enter/leave remain engine-owned.
 fn open_terminal() -> term.Term ! {io, not_tty, dumb, small} {
     let out = fs.stdout()
-    if !(std_io.is_terminal(fs.stdin()) else false) || !(std_io.is_terminal(out) else false) { return not_tty }
+    if !(std_io.is_terminal(fs.stdin()) else false) || !(std_io.is_terminal(out) else false) {
+        return not_tty
+    }
     let name = env.get("TERM") else ""
     if name == "dumb" { return dumb }
     let mode = std_term.mode(out) else |_| { return io }
@@ -113,8 +162,15 @@ fn open_terminal() -> term.Term ! {io, not_tty, dumb, small} {
     let cols = if size.columns == 0 then 80 else size.columns
     let rows = if size.rows == 0 then 24 else size.rows
     if cols < 40 || rows < 12 { return small }
-    term.Term { saved: mode, raw: false, alt: false, cols: cols, rows: rows,
-        truecolor: false, term_name: name }
+    term.Term {
+        saved: mode,
+        raw: false,
+        alt: false,
+        cols: cols,
+        rows: rows,
+        truecolor: false,
+        term_name: name,
+    }
 }
 
 fn frame(o: Options) -> grid.Grid { art.floor(o.seed, o.cols, o.rows, o.glyph_tier) }
@@ -131,15 +187,19 @@ fn live(mut o: Options) -> int {
         eprint("trail: {e} (minimum 40x12; stdin/stdout must be a terminal; TERM must not be dumb)")
         return 2
     }
-    if o.size_set && (o.cols > t.cols || o.rows > t.rows) { eprint("trail: small: recorded field exceeds terminal"); return 2 }
+    if o.size_set && (o.cols > t.cols || o.rows > t.rows) {
+        eprint("trail: small: recorded field exceeds terminal")
+        return 2
+    }
     if !o.size_set { o.cols = t.cols; o.rows = t.rows }
     var source = replay.new(o.seed, o.glyph_tier, o.cols, o.rows)
     if o.script != "" {
-        let text = fs.read(o.script) else |_| { return 2 }
+        let text = fs.read_text(o.script) else |_| { return 2 }
         source = replay.from_text(text, vocab()) else |_| { return 2 }
         if !o.seed_set { o.seed = source.seed }
         if !o.tier_set { o.glyph_tier = source.tier }
-        o.cols = source.cols; o.rows = source.rows
+        o.cols = source.cols
+        o.rows = source.rows
     }
     term.enter(mut t) else |_| { term.leave(mut t); return 2 }
     defer term.leave(mut t)
@@ -153,8 +213,15 @@ fn live(mut o: Options) -> int {
     var why = "--ticks"
     var finished = false
     while !finished {
-        let wake = clock.wait_until(mut timer, clock.next_due_ns(timer), term.signal_set()) else |_| { return 2 }
-        if wake.meaning & (term.signal_set() ^ signal.resize()) != 0 { why = "the interrupt"; break }
+        let wake = clock.wait_until(
+            mut timer,
+            clock.next_due_ns(timer),
+            term.signal_set(),
+        ) else |_| { return 2 }
+        if wake.meaning & (term.signal_set() ^ signal.resize()) != 0 {
+            why = "the interrupt"
+            break
+        }
         if wake.input_ready {
             let bytes = term.read_keys(256) else |_| { break }
             input.feed_all(mut decoder, bytes, clock.now_ns() / 1000000, mut pending)
@@ -166,7 +233,10 @@ fn live(mut o: Options) -> int {
             var keys = List[int]()
             for k in pending {
                 let key = mapped(k)
-                if key == 6 || key == 7 { why = if key == 7 then "the interrupt" else "the quit key"; finished = true }
+                if key == 6 || key == 7 {
+                    why = if key == 7 then "the interrupt" else "the quit key"
+                    finished = true
+                }
             }
             (mut pending).reset()
             if o.script != "" { let _size = replay.at(source, tick, mut keys) }
@@ -191,23 +261,29 @@ fn live(mut o: Options) -> int {
     0
 }
 
+/// Parse the command line and run trail; return 2 for bad input or I/O.
 pub fn run() -> int {
     let args = env.args()
     if args.len == 1 && args[0] == "--selftest" {
         return headless.diff_property()
     }
     if args.len == 1 && (args[0] == "--help" || args[0] == "-h") {
-        print("trail --seed N --size WxH --plain --replay FILE --record FILE\nArrows turn; Space pauses; Enter starts; r retries; q/Esc quits. Minimum 40x12.")
+        print(
+            "trail --seed N --size WxH --plain --replay FILE --record FILE\nArrows turn; Space pauses; Enter starts; r retries; q/Esc quits. Minimum 40x12.",
+        )
         return 0
     }
-    let o = options() else |_| { eprint("trail: parse: invalid option (try --help)"); return 2 }
+    var o = options() else |_| { eprint("trail: parse: invalid option (try --help)"); return 2 }
     if o.apply != "" {
         let bytes = fs.read_bytes(o.apply) else |_| { return 2 }
         var out = fs.stdout()
         fs.write_chunk(mut out, headless.apply(bytes, o.cols, o.rows)) else |_| { return 2 }
         return 0
     }
-    if o.cols < 40 || o.rows < 12 || o.cols > 400 || o.rows > 120 { eprint("trail: small: minimum 40x12, maximum 400x120"); return 2 }
+    if o.cols < 40 || o.rows < 12 || o.cols > 400 || o.rows > 120 {
+        eprint("trail: small: minimum 40x12, maximum 400x120")
+        return 2
+    }
     if o.headless_mode { return headless_run(o) }
-    live(o)
+    live(mut o)
 }
