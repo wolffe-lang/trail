@@ -1,0 +1,20 @@
+2026-10-25, nomad arm64. Exactly one local build; no local test/golden/pty runs.
+Code head: 2ded66e (later changes are evidence only).
+Scripted vm_stat gate: 10.19 GiB free+inactive+speculative, floor 8 GiB.
+Command: LAIR_LANE_HOST=nomad .lair/tools/build --release
+Build pid 30513, exited successfully.
+Engine: 57870143ebbb4806b8bee40379e8c6e781f50842
+wolf 0.2.35 cf0c13d38479f444b69bb8356ad5709d07eff323
+lupin 0.1.56; std 2386522eb059cca5a84108562c2c0a0e72345d34
+Both hosts' archive digests were read twice from the GitHub release API and
+matched lair's pin; fetchers separately verified archive bytes while staging.
+Mac wolf archive: 240b84d079b1b9a0d88681ac08fca4816f84778e2d6c94c435ceb2dd6a5f042a
+Mac lupin archive: 9133bfdbb95f6a18745439bf0b2b5280860a5bfeaf9ae038ea120a72d58f7687
+Linux wolf archive: 4cc4045bbbb605c07835bc4f32685953c784eeef4cd3139a48b457dfc90dad1a
+Linux lupin archive: ad703550ac4787e8e4bb26989d591a731410274d7332f2b4e8b9a64c878822cc
+Play binary: /Users/mfwolffe/lanes/tr00/trail/target/trail
+SHA256: 01526e9a0c9018630ecb371332864388ae228be50ea56ef242a110a56a44334e
+Play: /Users/mfwolffe/lanes/tr00/trail/target/trail --seed 52 --size 80x24
+Add --plain to inspect the other tier. Enter starts; arrows turn; q quits.
+The macOS pty/golden evidence must come from CI's full leg, not a forbidden
+local test loop. The coordinator owns that label and watch.
