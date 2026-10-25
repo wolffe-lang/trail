@@ -1,0 +1,7 @@
+pk 1
+seed 52
+tier rich
+size 80x24
+# score 100
+t 0 start
+t 78 quit

@@ -1,3 +1,8 @@
 #!/bin/sh
 set -eu
+ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+cd "$ROOT"
 .lair/tools/check
+.lair/tools/goldens --bin target/native/trail
+python3 -I tools/gameplay.py --bin target/native/trail
+python3 -I tools/gameplay.py --bin target/release/trail

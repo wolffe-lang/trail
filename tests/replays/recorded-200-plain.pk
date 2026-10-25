@@ -1,0 +1,8 @@
+pk 1
+seed 552
+tier plain
+size 200x60
+# score 100
+t 0 start
+t 63 down
+t 94 quit

@@ -1,0 +1,56 @@
+goldens: wrote tests/goldens/death-200-rich
+goldens: wrote tests/goldens/death-200-plain
+goldens: wrote tests/goldens/death-80-rich
+goldens: wrote tests/goldens/death-80-plain
+goldens: wrote tests/goldens/hit-200-rich
+goldens: wrote tests/goldens/hit-200-plain
+goldens: wrote tests/goldens/hit-80-rich
+goldens: wrote tests/goldens/hit-80-plain
+goldens: wrote tests/goldens/miss-200-rich
+goldens: wrote tests/goldens/miss-200-plain
+goldens: wrote tests/goldens/miss-80-rich
+goldens: wrote tests/goldens/miss-80-plain
+goldens: wrote tests/goldens/one-200-rich
+goldens: wrote tests/goldens/one-200-plain
+goldens: wrote tests/goldens/one-80-rich
+goldens: wrote tests/goldens/one-80-plain
+goldens: wrote tests/goldens/summons-200-rich
+goldens: wrote tests/goldens/summons-200-plain
+goldens: wrote tests/goldens/summons-80-rich
+goldens: wrote tests/goldens/summons-80-plain
+goldens: wrote tests/goldens/telegraph-200-rich
+goldens: wrote tests/goldens/telegraph-200-plain
+goldens: wrote tests/goldens/telegraph-80-rich
+goldens: wrote tests/goldens/telegraph-80-plain
+goldens: wrote tests/goldens/title-200-rich
+goldens: wrote tests/goldens/title-200-plain
+goldens: wrote tests/goldens/title-80-rich
+goldens: wrote tests/goldens/title-80-plain
+goldens: wrote tests/goldens/wrap-down-200-rich
+goldens: wrote tests/goldens/wrap-down-200-plain
+goldens: wrote tests/goldens/wrap-down-80-rich
+goldens: wrote tests/goldens/wrap-down-80-plain
+goldens: wrote tests/goldens/wrap-left-200-rich
+goldens: wrote tests/goldens/wrap-left-200-plain
+goldens: wrote tests/goldens/wrap-left-80-rich
+goldens: wrote tests/goldens/wrap-left-80-plain
+goldens: wrote tests/goldens/wrap-right-200-rich
+goldens: wrote tests/goldens/wrap-right-200-plain
+goldens: wrote tests/goldens/wrap-right-80-rich
+goldens: wrote tests/goldens/wrap-right-80-plain
+goldens: wrote tests/goldens/wrap-up-200-rich
+goldens: wrote tests/goldens/wrap-up-200-plain
+goldens: wrote tests/goldens/wrap-up-80-rich
+goldens: wrote tests/goldens/wrap-up-80-plain
+goldens: wrote tests/goldens/art
+gameplay: trail: scene semantics, four seams, score verification, refusals green
+pty: quit ok (linux x86_64, exit 0, 29813 bytes captured)
+pty: ctrl-c ok (linux x86_64, exit 0, 29813 bytes captured)
+pty: trap ok (linux x86_64, exit 134, 28572 bytes captured)
+pty: agree-rich ok (linux x86_64, exit 0, 28947 bytes captured)
+pty: agree-plain ok (linux x86_64, exit 0, 5474 bytes captured)
+pty: title-pause ok (linux x86_64, exit 0, 30503 bytes captured)
+pty: minimum-40x12 ok (linux x86_64, exit 0, 1945 bytes captured)
+pty: escape ok (linux x86_64, exit 0, 28947 bytes captured)
+pty: resize ok (linux x86_64, exit 0, 75521 bytes captured)
+pty: record-roundtrip ok (linux x86_64, exit 0, 29371 bytes captured)

@@ -1,3 +1,11 @@
 #!/bin/sh
+# Every status read directly; engine, game and both compiled backends.
 set -eu
+ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+cd "$ROOT"
+mkdir -p target/test-home
+export HOME="$ROOT/target/test-home"
 .lair/tools/check-linux
+.lair/tools/goldens --bin target/native/trail
+python3 -I tools/gameplay.py --bin target/native/trail
+python3 -I tools/gameplay.py --bin target/release/trail

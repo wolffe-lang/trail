@@ -1,0 +1,8 @@
+pk 1
+seed 7
+tier rich
+size 80x24
+# frames 1 every 1
+t 0 start
+# Explicit visual scene fixture 8; ordinary input-only recordings are in tests/replays.
+t 0 scene 8

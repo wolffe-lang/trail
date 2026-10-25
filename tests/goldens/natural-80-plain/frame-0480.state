@@ -1,0 +1,21 @@
+tick 480 age 480 phase 1 score 1800 length 17 longest 17 pending 2 eaten 18 survived 0 strikes 0 roll 0 eagle_age -1
+wrap 0 1 2 0
+wolf 6 2 2
+wolf 6 1 2
+wolf 6 0 3
+wolf 7 0 1
+wolf 7 1 1
+wolf 7 2 1
+wolf 7 3 3
+wolf 8 3 2
+wolf 8 2 2
+wolf 8 1 2
+wolf 8 0 3
+wolf 9 0 3
+wolf 10 0 3
+wolf 11 0 3
+wolf 12 0 3
+wolf 13 0 3
+wolf 14 0 3
+meat 0 6
+meat 5 2

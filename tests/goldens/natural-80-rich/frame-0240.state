@@ -1,0 +1,10 @@
+tick 240 age 240 phase 1 score 800 length 7 longest 7 pending 2 eaten 8 survived 0 strikes 0 roll 0 eagle_age -1
+wrap 0 1 0 0
+wolf 5 4 3
+wolf 6 4 1
+wolf 6 5 1
+wolf 6 6 3
+wolf 7 6 3
+wolf 8 6 3
+wolf 9 6 3
+meat 1 5
