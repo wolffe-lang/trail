@@ -3,3 +3,5 @@
 target/
 .wolf-cache/
 *.pk.tmp
+
+.lu-cache/
