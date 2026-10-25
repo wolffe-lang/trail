@@ -148,6 +148,10 @@ fn options() -> Options ! {parse} {
         }
         i += 1
     }
+    if o.record != "" && o.script != "" {
+        eprint("trail: parse: --record and --replay/--script are exclusive")
+        return parse
+    }
     if o.frames < 1 || o.every < 1 || o.frames > 1000000 || o.from_tick < 0 { return parse }
     o
 }

@@ -9,14 +9,15 @@ use world
 
 /// Seeded soil frame. Dimensions must be positive.
 pub fn floor(seed: int, cols: int, rows: int, t: int) -> grid.Grid {
+    let safe_seed = seed % 2147483646
     var g = grid.new(rows, cols)
     var r = 0
     while r < rows {
-        let band = world.noise(seed, 17, r * 3) / 64
+        let band = world.noise(safe_seed, 17, r * 3) / 64
         var c = 0
         while c < cols {
-            let h = world.hash(seed, r, c, 100)
-            let v = world.variant(seed, r, c, 3)
+            let h = world.hash(safe_seed, r, c, 100)
+            let v = world.variant(safe_seed, r, c, 3)
             let cp = if h < 3 {
                 if t == tier.PLAIN then 79 else 9670
             } else if h < 9 {
@@ -170,7 +171,7 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
         "eagle: {s.last_roll}/20 {if sim.hits(s.last_roll) then "HIT" else "miss"} (35%; hit 1-7)"
     }
     let hud = if cols < 80 {
-        "P{s.length} S{s.score} E{s.survived} d20:{if s.last_roll == 0 then "--" else "{s.last_roll}"} {if s.last_roll == 0 then "" else if sim.hits(s.last_roll) then "HIT" else "miss"} <=7 35%"
+        "35% <=7 d20:{if s.last_roll == 0 then "--" else "{s.last_roll}"} {if s.last_roll == 0 then "" else if sim.hits(s.last_roll) then "HIT" else "miss"} P{s.length} S{s.score} E{s.survived}"
     } else {
         "pack {s.length}  score {s.score}  survived {s.survived}  {roll}"
     }
