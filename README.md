@@ -18,8 +18,9 @@ The game includes all four wrapping seams, arriving wolves, one or two
 pieces of meat, the eagle's moving shadow, fixed 35% seeded d20 strikes,
 self-collision, title/death cards, pause, replay and recording. Ground is
 textured soil with scattered rocks, never a forest or flat fill. Wolves
-have solid bodies, four legs and a directional head; both tiers use the
-same footprint and simulation.
+have long solid bodies, moving four-frame legs, forward heads/ears and
+swaying tails. Gait follows distance moved and freezes when paused, also
+for arriving wolves. Both tiers keep the same five-by-three footprint.
 
 ## Build and play
 
@@ -75,8 +76,8 @@ container (podman by default; `LAIR_ENGINE=docker` for Docker).
 appropriate; coordinate the host's lock before using it. The CI PR tier
 runs Linux; the full tier adds macOS and performance.
 
-There are 63 checked unit tests including the pinned engine, 23 cases on
-both tiers plus the art directory (47 golden directories), twelve pty rows,
+There are 66 checked unit tests including the pinned engine, 31 cases on
+both tiers plus the art directory (63 golden directories), twelve pty rows,
 and executable-level gameplay checks on both compiler backends. Two real
 pty recordings each pin score 100; an ordinary-key 25-meal/23-wolf eagle
 witness pins 2500. Rare visual-scene fixtures are explicitly labelled,
