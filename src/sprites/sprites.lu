@@ -1,0 +1,132 @@
+//! Original solid-block silhouettes. One five-by-five pixel wolf is rotated
+//! before packing vertical pixel pairs into the five-by-three cell footprint.
+
+use grid
+use tier
+
+/// Occupancy in the north-facing wolf: head, body, four lateral legs, tail.
+pub fn north(x: int, y: int) -> bool {
+    if x < 0 || x > 4 || y < 0 || y > 4 { return false }
+    if y == 0 { return x >= 1 && x <= 3 }
+    if y == 1 || y == 3 { return true }
+    if y == 2 { return x >= 1 && x <= 3 }
+    x == 2
+}
+
+/// Rotate the same silhouette to a heading; padding row six stays empty.
+pub fn pixel(x: int, y: int, heading: int) -> bool {
+    if y > 4 { return false }
+    if heading == 2 { return north(4 - x, 4 - y) }
+    if heading == 3 { return north(4 - y, x) }
+    if heading == 4 { return north(y, 4 - x) }
+    north(x, y)
+}
+
+/// One cell from two pixels, or transparent zero. Plain has the same mask.
+pub fn wolf_cell(x: int, y: int, heading: int, t: int) -> int {
+    let top = pixel(x, y * 2, heading)
+    let bottom = pixel(x, y * 2 + 1, heading)
+    if !top && !bottom { return 0 }
+    if t == tier.PLAIN {
+        if heading == 1 && x == 2 && y == 0 { return 94 }
+        if heading == 2 && x == 2 && y == 2 { return 118 }
+        if heading == 3 && x == 0 && y == 1 { return 60 }
+        if heading == 4 && x == 4 && y == 1 { return 62 }
+        return 35
+    }
+    if top && bottom then 9608 else if top then 9600 else 9604
+}
+
+/// Draw five by three cells; the leader has a bright, bold coat, runners gold.
+pub fn wolf(
+    mut g: grid.Grid,
+    row: int,
+    col: int,
+    heading: int,
+    leader: bool,
+    runner: bool,
+    t: int,
+) {
+    let fg = if t == tier.PLAIN {
+        if runner then 11 else if leader then 15 else 7
+    } else if runner then 179 else if leader then 231 else 247
+    for y in 0..3 {
+        for x in 0..5 {
+            let cp = wolf_cell(x, y, heading, t)
+            if cp != 0 {
+                let old = grid.at(g, row + y, col + x)
+                grid.put(
+                    mut g,
+                    row + y,
+                    col + x,
+                    grid.cell(cp, fg, old.bg, if leader then grid.ATTR_BOLD else 0),
+                )
+            }
+        }
+    }
+}
+
+/// Solid red two-cell meat, never a letter on the rich tier.
+pub fn meat(mut g: grid.Grid, row: int, col: int, t: int) {
+    for x in 0..2 {
+        let old = grid.at(g, row, col + x)
+        grid.put(
+            mut g,
+            row,
+            col + x,
+            grid.cell(
+                if t == tier.PLAIN then 35 else 9608,
+                if t == tier.PLAIN then 9 else 196,
+                old.bg,
+                grid.ATTR_BOLD,
+            ),
+        )
+    }
+}
+
+/// Spread-wing eagle, seven by three, over the floor (not a cursor glyph).
+pub fn eagle(mut g: grid.Grid, row: int, col: int, t: int) {
+    for y in 0..3 {
+        for x in 0..7 {
+            let visible = y == 0 && (x == 0 || x == 6 || x == 3) ||
+                y == 1 && x >= 0 && x <= 6 ||
+                y == 2 && x >= 2 && x <= 4
+            if visible {
+                let old = grid.at(g, row + y, col + x)
+                grid.put(
+                    mut g,
+                    row + y,
+                    col + x,
+                    grid.cell(
+                        if t == tier.PLAIN then 35 else 9604,
+                        if t == tier.PLAIN then 15 else 223,
+                        old.bg,
+                        grid.ATTR_BOLD,
+                    ),
+                )
+            }
+        }
+    }
+}
+
+/// Dim diamond shadow. Its caller supplies a different position every tick.
+pub fn shadow(mut g: grid.Grid, row: int, col: int, t: int) {
+    for y in 0..3 {
+        for x in 0..5 {
+            if y == 1 && x >= 0 && x <= 4 || y != 1 && x == 2 {
+                let old = grid.at(g, row + y, col + x)
+                grid.put(
+                    mut g,
+                    row + y,
+                    col + x,
+                    grid.cell(
+                        if t == tier.PLAIN then 43 else 183,
+                        if t == tier.PLAIN then 8 else 240,
+                        old.bg,
+                        grid.ATTR_DIM,
+                    ),
+                )
+            }
+        }
+    }
+}

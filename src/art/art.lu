@@ -1,11 +1,13 @@
 //! Original soil: coherent earth tones under seed-scattered stones and clods.
 
+use draw
+use sim
+use sprites
 use grid
 use tier
 use world
 
 /// Seeded soil frame. Dimensions must be positive.
-#[allow(w0314)] // Scaffold seam: the sprite and card family is added next.
 pub fn floor(seed: int, cols: int, rows: int, t: int) -> grid.Grid {
     var g = grid.new(rows, cols)
     var r = 0
@@ -32,5 +34,200 @@ pub fn floor(seed: int, cols: int, rows: int, t: int) -> grid.Grid {
         }
         r += 1
     }
+    g
+}
+
+fn text(mut g: grid.Grid, row: int, col: int, value: str, t: int, bright: bool) {
+    draw.put_text(
+        mut g,
+        row,
+        col,
+        draw.fit(value, g.cols - col, false),
+        grid.cell(
+            32,
+            if t == tier.PLAIN then 15 else 230,
+            if t == tier.PLAIN then 0 else 52,
+            if bright then grid.ATTR_BOLD else 0,
+        ),
+    )
+}
+
+fn card(mut g: grid.Grid, title: str, lines: List[str], t: int) {
+    let width = if g.cols >= 64 then 62 else g.cols - 2
+    let height = lines.len + 4
+    let top = (g.rows - height) / 2
+    let left = (g.cols - width) / 2
+    let fg = if t == tier.PLAIN then 3 else 179
+    let bg = if t == tier.PLAIN then 0 else 52
+    draw.frame(
+        mut g,
+        top,
+        left,
+        height,
+        width,
+        grid.cell(if t == tier.PLAIN then 45 else 9472, fg, bg, 0),
+        grid.cell(if t == tier.PLAIN then 45 else 9472, fg, bg, 0),
+        grid.cell(if t == tier.PLAIN then 124 else 9474, fg, bg, 0),
+        grid.cell(32, fg, bg, 0),
+    )
+    text(mut g, top + 1, left + 3, draw.fit(title, width - 6, false), t, true)
+    var i = 0
+    while i < lines.len {
+        text(mut g, top + 3 + i, left + 3, draw.fit(lines[i], width - 6, false), t, false)
+        i += 1
+    }
+}
+
+/// Frame from pure simulation. A logical cell is five columns by three rows;
+/// resizing changes only centring, never the board or seeded rules.
+pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
+    var g = floor(s.seed, cols, rows, t)
+    let left = (cols - s.cols * 5) / 2
+    let top = 1 + (rows - 2 - s.rows * 3) / 2
+    for m in s.meat { sprites.meat(mut g, top + m.y * 3 + 1, left + m.x * 5 + 1, t) }
+    if s.eagle_age >= 0 && s.length > 0 {
+        let target_x = left + s.eagle_x * 5
+        let target_y = top + s.eagle_y * 3
+        let start_x = if s.eagle_edge == 0 {
+            -8
+        } else if s.eagle_edge == 1 {
+            cols + 7
+        } else {
+            target_x
+        }
+        let start_y = if s.eagle_edge == 2 {
+            -4
+        } else if s.eagle_edge == 3 {
+            rows + 3
+        } else {
+            target_y
+        }
+        var x = target_x
+        var y = target_y
+        if s.eagle_age < 30 {
+            x = start_x + (target_x - start_x) * s.eagle_age / 30
+            y = start_y + (target_y - start_y) * s.eagle_age / 30
+        } else {
+            let away_x = if s.eagle_edge == 0 {
+                cols + 8
+            } else if s.eagle_edge == 1 {
+                -8
+            } else {
+                target_x
+            }
+            let away_y = if s.eagle_edge == 2 {
+                rows + 4
+            } else if s.eagle_edge == 3 {
+                -4
+            } else {
+                target_y
+            }
+            x += (away_x - target_x) * (s.eagle_age - 30) / 18
+            y += (away_y - target_y) * (s.eagle_age - 30) / 18
+        }
+        sprites.shadow(mut g, y, x, t)
+        sprites.eagle(mut g, y - 3, x - 1, t)
+    }
+    var i = s.length - 1
+    while i >= 0 {
+        let w = sim.wolf(s, i)
+        sprites.wolf(mut g, top + w.y * 3, left + w.x * 5, w.heading, i == 0, false, t)
+        i -= 1
+    }
+    if s.length > 0 {
+        let tail = sim.wolf(s, s.length - 1)
+        for r in s.runners {
+            if r.active {
+                let progress = if r.age > 24 then 24 else r.age
+                let x = r.x * 5 + (tail.x * 5 - r.x * 5) * progress / 24
+                let y = r.y * 3 + (tail.y * 3 - r.y * 3) * progress / 24
+                let heading = if tail.x * 5 > x {
+                    4
+                } else if tail.x * 5 < x {
+                    3
+                } else if tail.y * 3 > y {
+                    2
+                } else {
+                    1
+                }
+                sprites.wolf(mut g, top + y, left + x, heading, false, true, t)
+            }
+        }
+    }
+    let bg = if t == tier.PLAIN then 0 else 52
+    draw.fill(mut g, 0, 0, 1, cols, grid.cell(32, 7, bg, 0))
+    let roll = if s.last_roll == 0 {
+        "eagle: --/20 (35%; hit 1-7)"
+    } else {
+        "eagle: {s.last_roll}/20 {if sim.hits(s.last_roll) then "HIT" else "miss"} (35%; hit 1-7)"
+    }
+    text(mut g, 0, 1, "pack {s.length}  score {s.score}  survived {s.survived}  {roll}", t, true)
+    draw.fill(mut g, rows - 1, 0, 1, cols, grid.cell(32, 7, bg, 0))
+    text(
+        mut g,
+        rows - 1,
+        1,
+        if s.paused {
+            "PAUSED  Space resumes | q quits"
+        } else {
+            "Arrows turn | Space pauses | q quits"
+        },
+        t,
+        false,
+    )
+    if s.phase == 0 {
+        card(
+            mut g,
+            "T R A I L",
+            [
+                "One wolf. A meal. A longer trail.",
+                "The eagle rolls a d20: 1-7 takes the tail.",
+                "The four edges are paths, not walls.",
+                "Enter to run. Arrows turn. Space pauses.",
+                "q / Esc leaves the trail.",
+            ],
+            t,
+        )
+    } else if s.phase == 2 {
+        let cause = if s.death == 1 {
+            "The trail crossed itself. The pack scattered."
+        } else {
+            "The eagle took the last wolf."
+        }
+        var history = ""
+        let first = if s.roll_count > 16 then s.roll_count - 16 else 0
+        var n = first
+        while n < s.roll_count { history += " {s.rolls[n % 16]}"; n += 1 }
+        card(
+            mut g,
+            "THE TRAIL ENDS",
+            [
+                cause,
+                "Score {s.score}   Longest trail {s.longest}",
+                "Eagles survived {s.survived} / {s.strikes} strikes",
+                "Last 16 rolls:{history}",
+                "r runs the same seed again. q leaves.",
+            ],
+            t,
+        )
+    }
+    g
+}
+
+/// Original sprite study, both tiers and both required field sizes.
+pub fn study(seed: int, cols: int, rows: int, t: int) -> grid.Grid {
+    var g = floor(seed, cols, rows, t)
+    text(mut g, 0, 1, "TRAIL / solid silhouettes / {tier.name(t)}", t, true)
+    for h in 1..5 {
+        let x = 3 + (h - 1) * 17
+        text(mut g, 2, x, "heading {h}", t, false)
+        sprites.wolf(mut g, 4, x, h, true, false, t)
+        sprites.wolf(mut g, 8, x, h, false, false, t)
+        sprites.wolf(mut g, 12, x, h, false, true, t)
+    }
+    text(mut g, 16, 2, "meat       eagle          sliding shadow", t, false)
+    sprites.meat(mut g, 18, 3, t)
+    sprites.eagle(mut g, 18, 16, t)
+    sprites.shadow(mut g, 19, 34, t)
     g
 }
