@@ -285,6 +285,7 @@ pub fn strike(mut s: State) {
     s.strikes += 1
     s.result_age = 45
     if hits(s.last_roll) {
+        for i in 0..s.runners.len { s.runners[i].active = false }
         s.length -= 1
         if s.length == 0 { s.phase = 2; s.death = 2 }
     } else {
