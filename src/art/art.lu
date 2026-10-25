@@ -1,0 +1,27 @@
+//! Original soil: coherent earth tones under seed-scattered stones and clods.
+use grid
+use tier
+use world
+
+pub fn floor(seed: int, cols: int, rows: int, t: int) -> grid.Grid {
+    var g = grid.new(rows, cols)
+    var r = 0
+    while r < rows {
+        let band = world.noise(seed, 17, r * 3) / 64
+        var c = 0
+        while c < cols {
+            let h = world.hash(seed, r, c, 100)
+            let v = world.variant(seed, r, c, 3)
+            let cp = if h < 3 { if t == tier.PLAIN then 79 else 9670 } else if h < 9 {
+                if t == tier.PLAIN then 111 else 9642
+            } else if h < 34 { if t == tier.PLAIN then 58 else 183 } else { 46 }
+            let fg = if t == tier.PLAIN { if h < 9 then 7 else 3 } else {
+                if h < 9 then 137 + v else 94 + (band + v) % 3
+            }
+            grid.put(mut g, r, c, grid.cell(cp, fg, if t == tier.PLAIN then 0 else 52, 0))
+            c += 1
+        }
+        r += 1
+    }
+    g
+}
