@@ -235,7 +235,7 @@ pub fn advance(mut s: State) {
     }
     let raw_x = old.x + (if s.heading == 4 then 1 else if s.heading == 3 then -1 else 0)
     let raw_y = old.y + (if s.heading == 2 then 1 else if s.heading == 1 then -1 else 0)
-    let x = wrap(raw_x, s.cols)
+    let x = if raw_x >= s.cols then s.cols - 1 else wrap(raw_x, s.cols)
     let y = wrap(raw_y, s.rows)
     var i = 0
     let count = if join >= 0 then s.length else s.length - 1
