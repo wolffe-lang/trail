@@ -10,9 +10,18 @@ pub struct Wolf { x: int, y: int, heading: int }
 pub struct Runner { x: int, y: int, age: int, active: bool, px: int, py: int, distance: int }
 
 /// One scattered/captured wolf, positions in 1/256 cells.
-pub struct ScatterWolf { x:int, y:int, start_x:int, start_y:int, heading:int, speed:int, distance:int }
+pub struct ScatterWolf {
+    x: int,
+    y: int,
+    start_x: int,
+    start_y: int,
+    heading: int,
+    speed: int,
+    distance: int,
+}
+
 /// Death animation duration after the first visible scatter frame.
-pub const SCATTER_TICKS:int=30
+pub const SCATTER_TICKS: int = 30
 
 /// A reproducible run. Storage is allocated once and bounded by field area.
 pub struct State {
@@ -24,8 +33,8 @@ pub struct State {
     wolves: List[Wolf],
     gaits: List[int],
     scatter: List[ScatterWolf],
-    scatter_count:int,
-    scatter_age:int,
+    scatter_count: int,
+    scatter_age: int,
     front: int,
     length: int,
     heading: int,
@@ -47,6 +56,24 @@ pub struct State {
     eagle_edge: int,
     eagle_x: int,
     eagle_y: int,
+    eagle_px: int,
+    eagle_py: int,
+    eagle_start_x: int,
+    eagle_start_y: int,
+    eagle_credit: int,
+    eagle_distance: int,
+    eagle_loiter: int,
+    eagle_span: int,
+    eagle_axis: int,
+    eagle_dir: int,
+    eagle_exit_age: int,
+    eagle_exit_pace: int,
+    dodges: int,
+    caught: int,
+    last_dodged: bool,
+    carried: bool,
+    taken: Wolf,
+    taken_gait: int,
     last_roll: int,
     result_age: int,
     rolls: List[int],
@@ -133,7 +160,7 @@ pub fn new(seed: int, cols: int, rows: int, playing: bool) -> State {
     let normalized = wrap(seed, 2147483646) + 1
     var wolves = List[Wolf]()
     var gaits = List[int]()
-    var scatter=List[ScatterWolf]()
+    var scatter = List[ScatterWolf]()
     var runners = List[Runner]()
     var holds = List[input.Hold]()
     var rolls = List[int]()
@@ -143,7 +170,15 @@ pub fn new(seed: int, cols: int, rows: int, playing: bool) -> State {
         (mut wolves).push(Wolf { x: cols / 2, y: rows / 2, heading: 4 })
         (mut runners).push(Runner { x: 0, y: 0, age: 0, active: false, px: 0, py: 0, distance: 0 })
         (mut gaits).push(0)
-        (mut scatter).push(ScatterWolf {x:0,y:0,start_x:0,start_y:0,heading:4,speed:0,distance:0})
+        (mut scatter).push(ScatterWolf {
+            x: 0,
+            y: 0,
+            start_x: 0,
+            start_y: 0,
+            heading: 4,
+            speed: 0,
+            distance: 0,
+        })
         i += 1
     }
     for _k in 0..4 { (mut holds).push(input.hold_new()); (mut wraps).push(0) }
@@ -156,7 +191,9 @@ pub fn new(seed: int, cols: int, rows: int, playing: bool) -> State {
         rows: rows,
         wolves: wolves,
         gaits: gaits,
-        scatter:scatter, scatter_count:0, scatter_age:0,
+        scatter: scatter,
+        scatter_count: 0,
+        scatter_age: 0,
         front: 0,
         length: 1,
         heading: 4,
@@ -178,6 +215,24 @@ pub fn new(seed: int, cols: int, rows: int, playing: bool) -> State {
         eagle_edge: 0,
         eagle_x: 0,
         eagle_y: 0,
+        eagle_px: 0,
+        eagle_py: 0,
+        eagle_start_x: 0,
+        eagle_start_y: 0,
+        eagle_credit: 0,
+        eagle_distance: 0,
+        eagle_loiter: 0,
+        eagle_span: 256,
+        eagle_axis: 0,
+        eagle_dir: 1,
+        eagle_exit_age: -1,
+        eagle_exit_pace: 16,
+        dodges: 0,
+        caught: 0,
+        last_dodged: false,
+        carried: false,
+        taken: Wolf { x: 0, y: 0, heading: 4 },
+        taken_gait: 0,
         last_roll: 0,
         result_age: 0,
         rolls: rolls,
@@ -260,7 +315,7 @@ pub fn advance(mut s: State) {
     while i < count {
         let w = wolf(s, i)
         if x == w.x && y == w.y {
-            begin_scatter(mut s,1,x,y)
+            begin_scatter(mut s, 1, x, y)
             return
         }
         i += 1
@@ -297,23 +352,165 @@ pub fn advance(mut s: State) {
     if s.length >= 3 && s.eagle_due < 0 && s.eagle_age < 0 { s.eagle_due = s.age + interval(mut s) }
 }
 
-/// A strike targets only the deque's last wolf. Runners cannot be selected.
+/// A roll is drawn only for a positional catch. A dodge consumes no RNG.
+pub fn roll_for_catch(mut seed: int, caught: bool) -> int {
+    if !caught { return 0 }
+    d20(mut seed)
+}
+
+/// Resolve impact against a frozen aim cell, never chasing a dodged tail.
 pub fn strike(mut s: State) {
     if s.phase != 1 { return }
-    s.last_roll = d20(mut s.roll_rng)
-    s.rolls[s.roll_count % 16] = s.last_roll
-    s.roll_count += 1
+    let tail = wolf(s, s.length - 1)
+    let caught = tail.x == s.eagle_x && tail.y == s.eagle_y
+    s.last_roll = roll_for_catch(mut s.roll_rng, caught)
+    s.last_dodged = !caught
     s.strikes += 1
     s.result_age = 45
-    if hits(s.last_roll) {
-        if s.length==1 { let w=wolf(s,0); begin_scatter(mut s,2,w.x,w.y) }
-        s.length -= 1
-    } else {
+    s.eagle_exit_age = 0
+    s.eagle_credit = 0
+    s.eagle_exit_pace = pace(s.length)
+    if !caught {
+        s.dodges += 1
         s.survived += 1
         s.score += 25
+    } else {
+        s.caught += 1
+        s.rolls[s.roll_count % 16] = s.last_roll
+        s.roll_count += 1
+        if hits(s.last_roll) {
+            s.carried = true
+            s.taken = copy tail
+            s.taken_gait = s.gaits[s.length - 1]
+            if s.length == 1 { begin_scatter(mut s, 2, tail.x, tail.y) }
+            s.length -= 1
+        } else {
+            s.survived += 1
+            s.score += 25
+        }
     }
     s.eagle_due = s.age + interval(mut s)
     refill(mut s)
+}
+
+/// A twelve-cell 60%-speed approach lasts these ticks at a fixed length.
+/// Even at maximum pace, two seconds elapse after the first visible frame.
+pub fn approach_ticks(length: int) -> int { (2400 + pace(length) - 1) / pace(length) }
+
+fn projected_tail(s: State) -> Wolf {
+    // Private scratch simulation uses the same pack-movement helper, seed and
+    // pending arrivals. No clock, future key assumptions or extra roll stream.
+    region forecast {
+        var model = copy s
+        model.eagle_age = 0
+        var flight = 0
+        while flight < 2400 && model.phase == 1 {
+            model.age += 1
+            advance_pack(mut model)
+            flight += pace(model.length)
+        }
+        wolf(model, model.length - 1)
+    }
+}
+
+/// Launch visibly on the nearest seeded edge, aiming at the projected tail
+/// if current heading, length and pace persist. The aim is never retargeted.
+pub fn begin_eagle(mut s: State) {
+    let toss = random(mut s.rng)
+    let aim = projected_tail(s)
+    s.eagle_x = aim.x
+    s.eagle_y = aim.y
+    var best = 100000
+    var edge = 0
+    for j in 0..4 {
+        let e = (j + toss % 4) % 4
+        let d = if e == 0 {
+            aim.x
+        } else if e == 1 {
+            s.cols - 1 - aim.x
+        } else if e == 2 {
+            aim.y
+        } else {
+            s.rows - 1 - aim.y
+        }
+        if d < best { best = d; edge = e }
+    }
+    s.eagle_edge = edge
+    let x = if edge == 0 then 0 else if edge == 1 then s.cols - 1 else aim.x
+    let y = if edge == 2 then 0 else if edge == 3 then s.rows - 1 else aim.y
+    s.eagle_start_x = x * 256
+    s.eagle_start_y = y * 256
+    s.eagle_px = x * 256
+    s.eagle_py = y * 256
+    s.eagle_axis = if edge < 2 then 1 else 0
+    let at = if s.eagle_axis == 0 then x else y
+    let extent = if s.eagle_axis == 0 then s.cols else s.rows
+    s.eagle_dir = if at < extent - 1 - at then 1 else -1
+    s.eagle_span = (if s.eagle_dir == 1 then extent - 1 - at else at) * 256
+    s.eagle_loiter = 12 * 256 - best * 256
+    s.eagle_credit = 0
+    s.eagle_distance = 0
+    s.eagle_age = 0
+    s.eagle_exit_age = -1
+    s.carried = false
+}
+
+fn triangle(distance: int, span: int) -> int {
+    if span <= 0 { return 0 }
+    let phase = distance % (span * 2)
+    if phase <= span then phase else span * 2 - phase
+}
+
+fn loiter_offset(distance: int, budget: int, span: int) -> int {
+    let whole = budget / (2 * span) * (2 * span)
+    if distance < whole { return triangle(distance, span) }
+    triangle(distance - whole, (budget - whole) / 2)
+}
+
+fn exit_eagle(mut s: State) {
+    let before = s.eagle_credit * 256 / 200
+    s.eagle_credit += if s.length > 0 then pace(s.length) else s.eagle_exit_pace
+    let delta = s.eagle_credit * 256 / 200 - before
+    if s.eagle_edge == 0 { s.eagle_px += delta }
+    if s.eagle_edge == 1 { s.eagle_px -= delta }
+    if s.eagle_edge == 2 { s.eagle_py += delta }
+    if s.eagle_edge == 3 { s.eagle_py -= delta }
+    s.eagle_distance += delta
+    s.eagle_exit_age += 1
+    if s.eagle_px < -256 ||
+        s.eagle_px > s.cols * 256 ||
+        s.eagle_py < -256 ||
+        s.eagle_py > s.rows * 256 {
+        s.eagle_age = -1
+        s.eagle_exit_age = -1
+        s.carried = false
+    }
+}
+
+fn fly_eagle(mut s: State) {
+    s.eagle_age += 1
+    if s.eagle_exit_age >= 0 { exit_eagle(mut s); return }
+    s.eagle_credit += pace(s.length)
+    let d = if s.eagle_credit >= 2400 then 3072 else s.eagle_credit * 256 / 200
+    s.eagle_distance = d
+    if d < s.eagle_loiter {
+        let along = loiter_offset(d, s.eagle_loiter, s.eagle_span) * s.eagle_dir
+        s.eagle_px = s.eagle_start_x + (if s.eagle_axis == 0 then along else 0)
+        s.eagle_py = s.eagle_start_y + (if s.eagle_axis == 1 then along else 0)
+    } else {
+        let remaining = d - s.eagle_loiter
+        let dx = s.eagle_x * 256 - s.eagle_start_x
+        let dy = s.eagle_y * 256 - s.eagle_start_y
+        s.eagle_px = s.eagle_start_x +
+            (if dx < 0 then -remaining else if dx > 0 then remaining else 0)
+        s.eagle_py = s.eagle_start_y +
+            (if dy < 0 then -remaining else if dy > 0 then remaining else 0)
+    }
+    if s.eagle_credit >= 2400 {
+        s.eagle_px = s.eagle_x * 256
+        s.eagle_py = s.eagle_y * 256
+        strike(mut s)
+    }
 }
 
 /// Pure tick over state and this tick's key stream; pause stops gameplay
@@ -324,7 +521,7 @@ pub fn step(mut s: State, keys: List[int]) {
     }
     var pressed = 0
     for key in keys {
-        if (s.phase==0 || s.phase==2) && (key >= 1 && key <= 5 || key == 8 || key == 9) {
+        if (s.phase == 0 || s.phase == 2) && (key >= 1 && key <= 5 || key == 8 || key == 9) {
             if s.phase == 2 { restart(mut s) } else { s.phase = 1 }
             if key >= 1 && key <= 4 {
                 // The first heading is a choice, not a reversal into a pack.
@@ -341,7 +538,11 @@ pub fn step(mut s: State, keys: List[int]) {
             pressed = key
         }
     }
-    if s.phase==3 { scatter_step(mut s); s.tick+=1; return }
+    if s.phase == 3 {
+        scatter_step(mut s)
+        s.tick += 1
+        return
+    }
     if s.phase == 1 && !s.paused {
         // A retired older hold must not undo a newer latched corner.
         var latest = s.holds[s.heading - 1].last
@@ -355,30 +556,16 @@ pub fn step(mut s: State, keys: List[int]) {
             i += 1
         }
         if pressed == 0 && wanted != 0 { turn(mut s, wanted) }
-        i = 0
-        while i < s.runners.len { if s.runners[i].active { s.runners[i].age += 1 }; i += 1 }
         s.age += 1
         if s.result_age > 0 { s.result_age -= 1 }
-        if s.eagle_due >= 0 && s.age >= s.eagle_due && s.eagle_age < 0 {
-            s.eagle_age = 0
-            s.eagle_edge = random(mut s.rng) % 4
-            let tail = wolf(s, s.length - 1)
-            s.eagle_x = tail.x
-            s.eagle_y = tail.y
-        }
-        if s.eagle_age >= 0 {
-            s.eagle_age += 1
-            if s.eagle_age <= 30 {
-                let tail = wolf(s, s.length - 1)
-                s.eagle_x = tail.x
-                s.eagle_y = tail.y
+        advance_pack(mut s)
+        if s.phase == 1 {
+            if s.eagle_age >= 0 {
+                fly_eagle(mut s)
+            } else if s.eagle_due >= 0 && s.age >= s.eagle_due {
+                begin_eagle(mut s)
             }
-            if s.eagle_age == 30 { strike(mut s) }
-            if s.eagle_age >= 48 { s.eagle_age = -1 }
         }
-        s.credit += pace(s.length)
-        if s.credit >= 120 { s.credit -= 120; advance(mut s) }
-        if s.phase == 1 { run_in(mut s) }
     }
     s.tick += 1
 }
@@ -406,10 +593,18 @@ pub fn restart(mut s: State) {
     s.eagle_due = -1
     s.eagle_age = -1
     s.last_roll = 0
+    s.dodges = 0
+    s.caught = 0
+    s.last_dodged = false
+    s.carried = false
+    s.eagle_credit = 0
+    s.eagle_distance = 0
+    s.eagle_exit_age = -1
     s.result_age = 0
     s.roll_count = 0
     s.death = 0
-    s.scatter_count=0; s.scatter_age=0
+    s.scatter_count = 0
+    s.scatter_age = 0
     refill(mut s)
 }
 
@@ -438,44 +633,91 @@ pub fn gait_distance(s: State, i: int) -> int {
     s.gaits[i]
 }
 
-
 /// Start a seeded one-second scatter (cause 1) or carry-away (cause 2).
 /// Stop at field bounds instead of wrapping; the leader participates too.
-pub fn begin_scatter(mut s:State,cause:int,cx:int,cy:int) {
-    s.death=cause; s.phase=3; s.scatter_age=0
-    s.scatter_count=if cause==2 then 1 else s.length
+pub fn begin_scatter(mut s: State, cause: int, cx: int, cy: int) {
+    s.death = cause
+    s.phase = 3
+    s.scatter_age = 0
+    s.scatter_count = if cause == 2 then 1 else s.length
     for i in 0..s.scatter_count {
-        let w=wolf(s,i)
-        let dx=w.x-cx; let dy=w.y-cy
-        let toss=random(mut s.rng)
-        var h=if magnitude(dx)>magnitude(dy) || (magnitude(dx)==magnitude(dy) && toss%2==0) {
-            if dx<0 then 3 else 4
-        } else { if dy<0 then 1 else 2 }
-        if dx==0 && dy==0 { h=toss%4+1 }
-        if cause==2 { h=if s.eagle_edge==0 then 4 else if s.eagle_edge==1 then 3 else if s.eagle_edge==2 then 2 else 1 }
-        s.scatter[i]=ScatterWolf {x:w.x*256,y:w.y*256,start_x:w.x*256,start_y:w.y*256,
-            heading:h,speed:4+toss%4,distance:s.gaits[i]*256}
-    }
-    if SCATTER_TICKS==0 { s.phase=2 }
-}
-fn clamp(value:int,lo:int,hi:int)->int { if value<lo then lo else if value>hi then hi else value }
-fn scatter_step(mut s:State) {
-    s.scatter_age+=1
-    for i in 0..s.scatter_count {
-        let w=copy s.scatter[i]
-        var x=w.x; var y=w.y
-        if s.death==2 {
-            let tx=if w.heading==4 then (s.cols+2)*256 else if w.heading==3 then -3*256 else w.start_x
-            let ty=if w.heading==2 then (s.rows+2)*256 else if w.heading==1 then -3*256 else w.start_y
-            x=w.start_x+(tx-w.start_x)*s.scatter_age/30
-            y=w.start_y+(ty-w.start_y)*s.scatter_age/30
-        } else {
-            let step=w.speed*256/30
-            x=clamp(w.x+(if w.heading==4 then step else if w.heading==3 then -step else 0),0,(s.cols-1)*256)
-            y=clamp(w.y+(if w.heading==2 then step else if w.heading==1 then -step else 0),0,(s.rows-1)*256)
-            s.scatter[i].distance+=magnitude(x-w.x)+magnitude(y-w.y)
+        let w = wolf(s, i)
+        let dx = w.x - cx
+        let dy = w.y - cy
+        let toss = random(mut s.rng)
+        var h = if magnitude(dx) > magnitude(dy) ||
+            magnitude(dx) == magnitude(dy) && toss % 2 == 0 {
+            if dx < 0 then 3 else 4
+        } else if dy < 0 then 1 else 2
+        if dx == 0 && dy == 0 { h = toss % 4 + 1 }
+        if cause == 2 {
+            h = if s.eagle_edge == 0 {
+                4
+            } else if s.eagle_edge == 1 {
+                3
+            } else if s.eagle_edge == 2 {
+                2
+            } else {
+                1
+            }
         }
-        s.scatter[i].x=x; s.scatter[i].y=y
+        s.scatter[i] = ScatterWolf {
+            x: w.x * 256,
+            y: w.y * 256,
+            start_x: w.x * 256,
+            start_y: w.y * 256,
+            heading: h,
+            speed: 4 + toss % 4,
+            distance: s.gaits[i] * 256,
+        }
     }
-    if s.scatter_age>=SCATTER_TICKS { s.phase=2 }
+    if cause == 2 {
+        s.eagle_px = s.scatter[0].x
+        s.eagle_py = s.scatter[0].y
+        s.eagle_credit = 0
+        s.eagle_exit_age = 0
+        s.eagle_exit_pace = pace(s.length)
+    }
+    if SCATTER_TICKS == 0 { s.phase = 2 }
+}
+
+fn clamp(value: int, lo: int, hi: int) -> int {
+    if value < lo then lo else if value > hi then hi else value
+}
+
+fn scatter_step(mut s: State) {
+    s.scatter_age += 1
+    if s.death == 2 { exit_eagle(mut s) }
+    for i in 0..s.scatter_count {
+        let w = copy s.scatter[i]
+        var x = w.x
+        var y = w.y
+        if s.death == 2 {
+            x = s.eagle_px
+            y = s.eagle_py
+        } else {
+            let step = w.speed * 256 / 30
+            x = clamp(
+                w.x + (if w.heading == 4 then step else if w.heading == 3 then -step else 0),
+                0,
+                (s.cols - 1) * 256,
+            )
+            y = clamp(
+                w.y + (if w.heading == 2 then step else if w.heading == 1 then -step else 0),
+                0,
+                (s.rows - 1) * 256,
+            )
+            s.scatter[i].distance += magnitude(x - w.x) + magnitude(y - w.y)
+        }
+        s.scatter[i].x = x
+        s.scatter[i].y = y
+    }
+    if s.scatter_age >= SCATTER_TICKS { s.phase = 2 }
+}
+
+fn advance_pack(mut s: State) {
+    for i in 0..s.runners.len { if s.runners[i].active { s.runners[i].age += 1 } }
+    s.credit += pace(s.length)
+    if s.credit >= 120 { s.credit -= 120; advance(mut s) }
+    if s.phase == 1 { run_in(mut s) }
 }

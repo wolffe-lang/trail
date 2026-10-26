@@ -1,5 +1,18 @@
 use sim
 
+fn quiet_meat(mut s: sim.State) {
+    (mut s.meat).reset()
+    (mut s.meat).push(sim.Wolf { x: 0, y: 0, heading: 0 })
+    if s.length >= 8 { (mut s.meat).push(sim.Wolf { x: 1, y: 0, heading: 0 }) }
+}
+
+fn caught_strike(mut s: sim.State) {
+    let w = sim.wolf(s, s.length - 1)
+    s.eagle_x = w.x
+    s.eagle_y = w.y
+    sim.strike(mut s)
+}
+
 fn place(mut s: sim.State, x: int, y: int, heading: int) {
     s.front = 0
     s.length = 1
@@ -73,7 +86,7 @@ fn test_running_newcomer_is_immune_to_eagle() {
     s.runners[0].age = 12
     // Find the next seeded hit without changing the strike path.
     seek_roll(mut s.roll_rng, true)
-    sim.strike(mut s)
+    caught_strike(mut s)
     assert(s.length == 0 && s.phase == 3 && sim.pending(s) == 1 && s.runners[0].age == 12)
 }
 
@@ -83,7 +96,7 @@ fn test_d20_distribution_10000_seeded_strikes() {
     var bins = List[int]()
     for _n in 0..20 { (mut bins).push(0) }
     for _n in 0..10000 {
-        let roll = sim.d20(mut seed)
+        let roll = sim.roll_for_catch(mut seed, true)
         assert(roll >= 1 && roll <= 20)
         bins[roll - 1] += 1
         if sim.hits(roll) { hits += 1 }
@@ -97,10 +110,10 @@ fn test_d20_distribution_10000_seeded_strikes() {
 fn test_pack_of_one_death_and_miss() {
     var s = sim.new(4, 16, 7, true)
     seek_roll(mut s.roll_rng, false)
-    sim.strike(mut s)
+    caught_strike(mut s)
     assert(s.length == 1 && s.phase == 1 && s.survived == 1 && s.score == 25)
     seek_roll(mut s.roll_rng, true)
-    sim.strike(mut s)
+    caught_strike(mut s)
     assert(s.length == 0 && s.phase == 3 && s.death == 2)
 }
 
@@ -136,17 +149,56 @@ fn test_pace_and_cadence_and_first_eagle() {
     for _n in 0..100 { assert(sim.interval(mut s) >= 180) }
 }
 
-fn test_telegraph_lasts_30_ticks_and_exit_18() {
-    var s = sim.new(7, 16, 7, true)
-    s.eagle_due = 1
-    for _n in 0..29 { sim.step(mut s, List[int]()) }
-    assert(s.strikes == 0 && s.eagle_age == 29)
-    sim.step(mut s, List[int]())
-    assert(s.strikes == 1)
-    if s.phase == 1 {
-        for _n in 0..18 { sim.step(mut s, List[int]()) }
-        assert(s.eagle_age == -1)
+fn test_visible_approach_time_is_pinned_at_all_lengths() {
+    for length in [1, 8, 16, 25] {
+        var s = sim.new(7, 40, 8, true)
+        s.length = length
+        for i in 0..length { s.wolves[i] = sim.Wolf { x: sim.wrap(20 - i, 40), y: 4, heading: 4 } }
+        quiet_meat(mut s)
+        sim.begin_eagle(mut s)
+        let ticks = sim.approach_ticks(length)
+        assert(
+            ticks >= 60 &&
+                s.eagle_px >= 0 &&
+                s.eagle_px < s.cols * 256 &&
+                s.eagle_py >= 0 &&
+                s.eagle_py < s.rows * 256,
+        )
+        for _n in 0..ticks - 1 { sim.step(mut s, List[int]()) }
+        assert(s.strikes == 0)
+
+        sim.step(mut s, List[int]())
+        assert(s.strikes == 1 && s.caught == 1)
+        print(
+            "approach length {length}: {ticks} ticks, {ticks*1000/30} ms, pace {sim.pace(length)} quarter-cells/s",
+        )
     }
+}
+
+fn test_turn_two_cells_before_impact_dodges_without_rng() {
+    var s = sim.new(7, 11, 8, true)
+    quiet_meat(mut s)
+    sim.begin_eagle(mut s)
+    let seed = s.roll_rng
+    let ticks = sim.approach_ticks(1)
+    for n in 0..ticks {
+
+        var keys = List[int]()
+        if n == ticks - 15 { (mut keys).push(1) }
+        sim.step(mut s, keys)
+    }
+    assert(s.strikes == 1 && s.dodges == 1 && s.caught == 0 && s.last_dodged)
+    assert(s.roll_rng == seed && s.roll_count == 0 && s.last_roll == 0)
+}
+
+fn test_no_turn_is_caught_and_rolls_fair_d20() {
+    var s = sim.new(7, 11, 8, true)
+    quiet_meat(mut s)
+    sim.begin_eagle(mut s)
+    let seed = s.roll_rng
+    for _n in 0..sim.approach_ticks(1) { sim.step(mut s, List[int]()) }
+    assert(s.strikes == 1 && s.caught == 1 && s.dodges == 0 && !s.last_dodged)
+    assert(s.roll_rng != seed && s.last_roll >= 1 && s.last_roll <= 20 && s.roll_count == 1)
 }
 
 fn test_self_collision_and_departing_tail() {
@@ -272,24 +324,44 @@ fn test_runner_arrival_keeps_final_contact_phase() {
     assert(s.runners[0].distance == 1024 && sim.gait_distance(s, 1) == 4)
 }
 
-
 fn test_scatter_is_seeded_and_card_waits_thirty_ticks() {
-    var a=sim.new(7,11,3,true); var b=sim.new(7,11,3,true)
-    sim.begin_scatter(mut a,1,4,1); sim.begin_scatter(mut b,1,4,1)
-    assert(a.phase==3 && a.scatter_age==0 && a.scatter_count==a.length)
-    for _n in 0..29 { sim.step(mut a,List[int]()); sim.step(mut b,List[int]()) }
-    assert(a.phase==3 && a.scatter_age==29)
-    assert(a.scatter[0].x==b.scatter[0].x && a.scatter[0].y==b.scatter[0].y && a.scatter[0].distance==b.scatter[0].distance)
-    assert(a.scatter[0].distance>0)
-    sim.step(mut a,List[int]()); assert(a.phase==2 && a.scatter_age==30)
+    var a = sim.new(7, 11, 3, true)
+    var b = sim.new(7, 11, 3, true)
+    sim.begin_scatter(mut a, 1, 4, 1)
+    sim.begin_scatter(mut b, 1, 4, 1)
+    assert(a.phase == 3 && a.scatter_age == 0 && a.scatter_count == a.length)
+    for _n in 0..29 { sim.step(mut a, List[int]()); sim.step(mut b, List[int]()) }
+    assert(a.phase == 3 && a.scatter_age == 29)
+    assert(
+        a.scatter[0].x == b.scatter[0].x &&
+            a.scatter[0].y == b.scatter[0].y &&
+            a.scatter[0].distance == b.scatter[0].distance,
+    )
+    assert(a.scatter[0].distance > 0)
+    sim.step(mut a, List[int]())
+    assert(a.phase == 2 && a.scatter_age == 30)
 }
+
 fn test_taken_last_wolf_is_carried_to_exit_before_card() {
-    var s=sim.new(7,11,3,true)
-    let w=sim.wolf(s,0); s.eagle_edge=0
-    sim.begin_scatter(mut s,2,w.x,w.y); s.length=0
-    let x=s.scatter[0].x
-    for _n in 0..15 { sim.step(mut s,List[int]()) }
-    assert(s.phase==3 && s.scatter[0].x>x)
-    for _n in 0..15 { sim.step(mut s,List[int]()) }
-    assert(s.phase==2 && s.scatter[0].x>=s.cols*256)
+    var s = sim.new(7, 11, 3, true)
+    let w = sim.wolf(s, 0)
+    s.eagle_edge = 0
+    sim.begin_scatter(mut s, 2, w.x, w.y)
+    s.length = 0
+    let x = s.scatter[0].x
+    for _n in 0..15 { sim.step(mut s, List[int]()) }
+    assert(s.phase == 3 && s.scatter[0].x > x)
+    for _n in 0..15 { sim.step(mut s, List[int]()) }
+    assert(s.phase == 2 && s.scatter[0].x > x)
+}
+
+fn test_predictive_aim_includes_seeded_meals_and_arrivals() {
+    var s = sim.new(7, 40, 8, true)
+    (mut s.meat).reset()
+    let head = sim.wolf(s, 0)
+    (mut s.meat).push(sim.Wolf { x: head.x + 1, y: head.y, heading: 0 })
+    sim.begin_eagle(mut s)
+    var ticks = 0
+    while s.strikes == 0 && s.phase == 1 && ticks < 151 { sim.step(mut s, List[int]()); ticks += 1 }
+    assert(s.eaten >= 1 && s.length >= 1 && s.caught == 1 && !s.last_dodged)
 }

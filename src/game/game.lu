@@ -216,7 +216,7 @@ fn source_for(mut o: Options) -> replay.Replay ! {parse, io} {
 }
 
 fn state_text(s: sim.State) -> str {
-    var value = "tick {s.tick} age {s.age} phase {s.phase} score {s.score} length {s.length} longest {s.longest} pending {sim.pending(s)} eaten {s.eaten} survived {s.survived} strikes {s.strikes} roll {s.last_roll} eagle_age {s.eagle_age} scatter_age {s.scatter_age}\n"
+    var value = "tick {s.tick} age {s.age} phase {s.phase} score {s.score} length {s.length} longest {s.longest} pending {sim.pending(s)} eaten {s.eaten} survived {s.survived} strikes {s.strikes} dodges {s.dodges} caught {s.caught} roll {s.last_roll} eagle_age {s.eagle_age} scatter_age {s.scatter_age}\n"
     value += "wrap {s.wraps[0]} {s.wraps[1]} {s.wraps[2]} {s.wraps[3]}\n"
     var i = 0
     while i < s.length {
@@ -486,7 +486,9 @@ fn live(mut o: Options) -> int {
                 for j in 0..prev.cells.len { prev.cells[j] = copy next.cells[j] }
                 first = false
             }
-            if o.trace { eprint("trace state tick {s.tick} phase {s.phase} scatter {s.scatter_age}") }
+            if o.trace {
+                eprint("trace state tick {s.tick} phase {s.phase} scatter {s.scatter_age}")
+            }
             if o.trace && carries {
                 eprint(
                     "trace frame {s.tick} carries_key inner_us {(clock.now_ns() - key_at) / 1000}",

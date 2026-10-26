@@ -93,50 +93,16 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
             t,
         )
     }
-    if s.eagle_age >= 0 && s.length > 0 {
-        let target_x = left + s.eagle_x * sprites.CELL_SPAN + sprites.CELL_SPAN / 2 - 2
-        let target_y = top + s.eagle_y * sprites.CELL_SPAN + sprites.CELL_SPAN / 2 - 1
-        let start_x = if s.eagle_edge == 0 {
-            -8
-        } else if s.eagle_edge == 1 {
-            cols + 7
-        } else {
-            target_x
+    if s.eagle_age >= 0 && s.death == 0 {
+        let x = left + s.eagle_px * sprites.CELL_SPAN / 256 + 3
+        let y = top + s.eagle_py * sprites.CELL_SPAN / 256 + 3
+        sprites.shadow(mut g, y + 1, x - 2, t)
+        sprites.eagle(mut g, y - 1, x - 3, t)
+        if s.carried {
+            sprites.wolf(mut g, y - 2, x - 3, s.taken.heading, s.taken_gait, false, false, t)
         }
-        let start_y = if s.eagle_edge == 2 {
-            -4
-        } else if s.eagle_edge == 3 {
-            rows + 3
-        } else {
-            target_y
-        }
-        var x = target_x
-        var y = target_y
-        if s.eagle_age < 30 {
-            x = start_x + (target_x - start_x) * s.eagle_age / 30
-            y = start_y + (target_y - start_y) * s.eagle_age / 30
-        } else {
-            let away_x = if s.eagle_edge == 0 {
-                cols + 8
-            } else if s.eagle_edge == 1 {
-                -8
-            } else {
-                target_x
-            }
-            let away_y = if s.eagle_edge == 2 {
-                rows + 4
-            } else if s.eagle_edge == 3 {
-                -4
-            } else {
-                target_y
-            }
-            x += (away_x - target_x) * (s.eagle_age - 30) / 18
-            y += (away_y - target_y) * (s.eagle_age - 30) / 18
-        }
-        sprites.shadow(mut g, y, x, t)
-        sprites.eagle(mut g, y - 3, x - 1, t)
     }
-    var i = if s.death==0 then s.length-1 else -1
+    var i = if s.death == 0 then s.length - 1 else -1
     while i >= 0 {
         let w = sim.wolf(s, i)
         sprites.wolf(
@@ -151,7 +117,7 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
         )
         i -= 1
     }
-    if s.length>0 && s.death==0 {
+    if s.length > 0 && s.death == 0 {
         let tail = sim.wolf(s, s.length - 1)
         for r in s.runners {
             if r.active {
@@ -171,25 +137,40 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
         }
     }
     for k in 0..s.scatter_count {
-        let w=copy s.scatter[k]
-        let x=left+w.x*sprites.CELL_SPAN/256
-        let y=top+w.y*sprites.CELL_SPAN/256
-        sprites.wolf(mut g,y,x,w.heading,w.distance/256,k==0,false,t)
-        if s.death==2 { sprites.eagle(mut g,y-1,x,t) }
+        let w = copy s.scatter[k]
+        let x = left + w.x * sprites.CELL_SPAN / 256
+        let y = top + w.y * sprites.CELL_SPAN / 256
+        sprites.wolf(mut g, y, x, w.heading, w.distance / 256, k == 0, false, t)
+        if s.death == 2 { sprites.eagle(mut g, y - 1, x, t) }
     }
     let bg = if t == tier.PLAIN then 0 else 52
     draw.fill(mut g, 0, 0, 1, cols, grid.cell(32, 7, bg, 0))
-    let roll = if s.last_roll == 0 {
+    let roll = if s.last_dodged {
+        "eagle: dodged (no roll)"
+    } else if s.last_roll == 0 {
         "eagle: --/20 (35%; hit 1-7)"
     } else {
         "eagle: {s.last_roll}/20 {if sim.hits(s.last_roll) then "HIT" else "miss"} (35%; hit 1-7)"
     }
-    let hud = if cols < 80 {
+    let hud = if s.last_dodged {
+        "eagle: dodged P{s.length} S{s.score} E{s.survived}"
+    } else if cols < 80 {
         "35% <=7 d20:{if s.last_roll == 0 then "--" else "{s.last_roll}"} {if s.last_roll == 0 then "" else if sim.hits(s.last_roll) then "HIT" else "miss"} P{s.length} S{s.score} E{s.survived}"
     } else {
         "pack {s.length}  score {s.score}  survived {s.survived}  {roll}"
     }
-    text(mut g,0,1,if s.phase==3 then (if s.death==1 then "the pack scatters" else "the eagle carries the last wolf") else hud,t,true)
+    text(
+        mut g,
+        0,
+        1,
+        if s.phase == 3 {
+            (if s.death == 1 then "the pack scatters" else "the eagle carries the last wolf")
+        } else {
+            hud
+        },
+        t,
+        true,
+    )
     draw.fill(mut g, rows - 1, 0, 1, cols, grid.cell(32, 7, bg, 0))
     text(
         mut g,
