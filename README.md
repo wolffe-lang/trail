@@ -18,9 +18,9 @@ The game includes all four wrapping seams, arriving wolves, one or two
 pieces of meat, the eagle's moving shadow, fixed 35% seeded d20 strikes,
 self-collision, title/death cards, pause, replay and recording. Ground is
 textured soil with scattered rocks, never a forest or flat fill. Wolves
-have long solid bodies, moving four-frame legs, forward heads/ears and
-swaying tails. Gait follows distance moved and freezes when paused, also
-for arriving wolves. Both tiers keep the same seven-by-seven collision cell, containing a 7x3 or 3x7 sheet.
+have a top-down north/south torso with legs on both sides, profile east/west
+bodies, moving legs, forward heads/ears and swaying tails. Gait follows distance moved and freezes when paused, also
+for arriving wolves. Both tiers keep the same seven-by-seven collision cell, containing a 7x3 or 5x7 sheet.
 
 ## Build and play
 
@@ -55,8 +55,10 @@ interrupts and runtime traps.
 | q / Escape | quit |
 | Ctrl-C | quit and restore |
 
-A meal scores 100. A missed eagle scores 25. The HUD exposes the last roll
-and the fixed hit threshold, 1–7 on a d20. The death card shows the score,
+A meal scores 100. A missed or dodged eagle scores 25. The HUD exposes the last roll
+and the fixed caught-wolf threshold, 1–7 on a d20. A positional dodge
+consumes no roll. Visible approaches last at least two seconds; self-collision
+and the last-wolf capture animate for one second before the death card. The death card shows the score,
 longest pack, eagles survived and the latest sixteen rolls.
 
 ## Replays and tests
@@ -76,11 +78,11 @@ container (podman by default; `LAIR_ENGINE=docker` for Docker).
 appropriate; coordinate the host's lock before using it. The CI PR tier
 runs Linux; the full tier adds macOS and performance.
 
-There are 67 checked unit tests including the pinned engine, 31 cases on
-both tiers plus the art directory (63 golden directories), twelve pty rows,
+There are 77 checked unit tests including the pinned engine, 41 cases on
+both tiers plus the art directory (83 golden directories), thirteen pty rows,
 and executable-level gameplay checks on both compiler backends. Two real
-pty recordings each pin score 100; an ordinary-key 12-meal/12-wolf eagle
-witness pins 1200. Rare visual-scene fixtures are explicitly labelled,
+pty recordings each pin score 100; an ordinary-key 14-meal/14-wolf dodge
+witness pins 1425. Rare visual-scene fixtures are explicitly labelled,
 not presented as recordings. Performance gates bound render/diff time,
 idle wake-ups and input latency. Physical terminal font/key measurements
 and the PAX installer remain follow-on work.
