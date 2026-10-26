@@ -3,7 +3,8 @@
 use sim
 
 /// Set a labelled scene (1 summons, 2 telegraph, 3 hit, 4 miss,
-/// 5..8 cardinal seams, 9 death, 10 busy benchmark). Not used by live keys.
+/// 5..8 cardinal seams, 9 death, 10 busy benchmark, 11 scatter, 12 carry, 13 eagle launch).
+/// Not used by live keys.
 #[allow(w0314)] // One deliberate test-data boundary, not a simulation rule.
 pub fn scene(mut s: sim.State, n: int) {
     s.phase = 1
@@ -74,6 +75,10 @@ pub fn scene(mut s: sim.State, n: int) {
         s.eagle_edge = 0
         sim.begin_scatter(mut s, 2, w.x, w.y)
         s.length = 0
+    } else if n == 13 {
+        (mut s.meat).reset()
+        (mut s.meat).push(sim.Wolf { x: 0, y: 0, heading: 0 })
+        sim.begin_eagle(mut s)
     } else if n == 10 {
         s.length = if s.cols * s.rows >= 20 then 20 else 8
         s.longest = s.length

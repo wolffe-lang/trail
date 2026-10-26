@@ -31,7 +31,7 @@ def main():
         summoned, _, _ = run(bin,case('summons'))
         assert summoned['pending'] == 1 and summoned['length'] == 1
         telegraph, _, _ = run(bin,case('telegraph'))
-        assert telegraph['eagle_age'] == 19 and telegraph['strikes'] == 0
+        assert telegraph['eagle_age'] == 21 and telegraph['strikes'] == 0
         hit, _, hit_screen = run(bin,case('hit'))
         assert hit['length'] == 2 and 1 <= hit['roll'] <= 7 and hit['strikes'] == 1
         assert 'HIT' in hit_screen and '35%' in hit_screen
@@ -43,6 +43,16 @@ def main():
             assert st['phase']==1 and st['length']==1
             assert re.search(r'^gait 0 1$',text,re.M),text
             assert int(re.search(r'^wolf \d+ \d+ (\d+)$',text,re.M)[1])==heading
+        dodge, _, dodge_screen=run(bin,case('dodge'),150)
+        assert dodge['dodges']==1 and dodge['caught']==0 and dodge['roll']==0 and dodge['score']==25
+        assert 'eagle: dodged' in dodge_screen
+        caught, _, _=run(bin,case('caught'),150)
+        assert caught['caught']==1 and caught['dodges']==0 and 1<=caught['roll']<=20
+        mid,_,mid_screen=run(bin,case('scatter'),16)
+        assert mid['phase']==3 and mid['scatter_age']==15 and 'the pack scatters' in mid_screen
+        assert 'THE TRAIL ENDS' not in mid_screen
+        end,_,end_screen=run(bin,case('scatter-end'),31)
+        assert end['phase']==2 and end['scatter_age']==30 and 'THE TRAIL ENDS' in end_screen
         dead, _, screen = run(bin,case('death'))
         assert dead['phase'] == 2 and 'THE TRAIL ENDS' in screen
         for i,name in enumerate(('up','down','left','right')):
@@ -62,7 +72,7 @@ def main():
     natural = ROOT/'tests/cases/natural-200.pk'
     frames=int(re.search(r'^# frames (\d+)',natural.read_text(),re.M)[1])
     st, _, _ = run(bin,natural,frames)
-    assert st['eaten']==12 and st['strikes']==1 and st['phase']==1 and st['score']==1200 and st['longest']==12
+    assert st['eaten']==14 and st['strikes']==1 and st['phase']==1 and st['score']==1425 and st['dodges']==1 and st['caught']==0 and st['longest']==14
     print(f'gameplay: natural ordinary-key run: {st["eaten"]} meals, longest {st["longest"]}, score {st["score"]}')
     bad = [('--size','39x16'),('--size','40x15'),('--every','0'),('--seed','x')]
     for flags in bad:

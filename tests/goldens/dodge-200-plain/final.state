@@ -1,0 +1,5 @@
+tick 150 age 150 phase 1 score 25 length 1 longest 1 pending 0 eaten 0 survived 1 strikes 1 dodges 1 caught 0 roll 0 eagle_age 150 scatter_age 0
+wrap 0 0 0 1
+wolf 4 2 1
+gait 0 20
+meat 0 0

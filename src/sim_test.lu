@@ -155,7 +155,9 @@ fn test_visible_approach_time_is_pinned_at_all_lengths() {
         s.length = length
         for i in 0..length { s.wolves[i] = sim.Wolf { x: sim.wrap(20 - i, 40), y: 4, heading: 4 } }
         quiet_meat(mut s)
-        sim.begin_eagle(mut s)
+        s.eagle_due = 1
+        sim.step(mut s, List[int]())
+        assert(s.eagle_age == 0 && s.eagle_credit == 0)
         let ticks = sim.approach_ticks(length)
         assert(
             ticks >= 60 &&
@@ -164,7 +166,10 @@ fn test_visible_approach_time_is_pinned_at_all_lengths() {
                 s.eagle_py >= 0 &&
                 s.eagle_py < s.rows * 256,
         )
-        for _n in 0..ticks - 1 { sim.step(mut s, List[int]()) }
+        for n in 0..ticks - 1 {
+            sim.step(mut s, List[int]())
+            if n == 29 { assert(s.eagle_distance == sim.pace(length) * 30 * 256 / 200) }
+        }
         assert(s.strikes == 0)
 
         sim.step(mut s, List[int]())

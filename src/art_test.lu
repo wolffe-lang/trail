@@ -152,3 +152,28 @@ fn test_eagle_supplied_wings_and_flap_distance() {
     }
     assert(sprites.eagle_phase(256) == 0)
 }
+
+fn test_top_down_north_is_the_supplied_sheet() {
+    let fixed = ["·▟█▙·", "··█··", "", "·███·", "", "·███·", ""]
+    for phase in 0..4 {
+        for y in 0..7 {
+            let row = if y == 2 {
+                if phase % 2 == 1 then "▌███▐" else if phase == 0 then "▘███▖" else "▖███▘"
+            } else if y == 4 {
+                if phase % 2 == 1 then "▌███▐" else if phase == 0 then "▖███▘" else "▘███▖"
+            } else if y == 6 {
+                if phase % 2 == 0 then "··▘··" else "··▝··"
+            } else {
+                fixed[y]
+            }
+            var x = 0
+            for ch in row.chars() {
+                assert(
+                    sprites.wolf_cell(x, y, 1, phase, tier.RICH) ==
+                        (if ch == '·' then 0 else ch as int),
+                )
+                x += 1
+            }
+        }
+    }
+}

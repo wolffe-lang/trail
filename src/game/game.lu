@@ -210,7 +210,7 @@ fn source_for(mut o: Options) -> replay.Replay ! {parse, io} {
             eprint("trail: small: replay resize outside 40x16..400x120")
             return parse
         }
-        if event.key >= replay.EV_ARG && (event.arg < 1 || event.arg > 12) { return parse }
+        if event.key >= replay.EV_ARG && (event.arg < 1 || event.arg > 13) { return parse }
     }
     source
 }
@@ -552,7 +552,7 @@ fn selftest() -> int {
     }
     var seed: int = 8
     var hits = 0
-    for _n in 0..10000 { if sim.hits(sim.d20(mut seed)) { hits += 1 } }
+    for _n in 0..10000 { if sim.hits(sim.roll_for_catch(mut seed, true)) { hits += 1 } }
     if hits != 3403 { print("selftest: seeded d20 FAILED {hits}"); bad += 1 }
     print("selftest: {bad} failures; d20 {hits}/10000; decoder splits and diff property")
     bad

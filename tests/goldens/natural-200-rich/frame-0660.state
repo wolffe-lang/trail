@@ -1,4 +1,4 @@
-tick 660 age 660 phase 1 score 1100 length 11 longest 11 pending 1 eaten 11 survived 0 strikes 0 roll 0 eagle_age -1 scatter_age 0
+tick 660 age 660 phase 1 score 1100 length 11 longest 11 pending 1 eaten 11 survived 0 strikes 0 dodges 0 caught 0 roll 0 eagle_age -1 scatter_age 0
 wrap 3 1 1 1
 wolf 24 2 1
 gait 0 106

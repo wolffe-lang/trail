@@ -2,8 +2,8 @@ pk 1
 seed 52
 tier rich
 size 200x60
-# frames 728 every 60 from 600
-# score 1200
+# frames 786 every 60 from 600
+# score 1425
 t 0 start
 t 1 up
 t 8 up
@@ -127,4 +127,17 @@ t 713 left
 t 717 left
 t 722 left
 t 726 left
-t 727 quit
+t 731 left
+t 735 left
+t 739 left
+t 744 left
+t 748 left
+t 752 left
+t 756 left
+t 761 left
+t 765 left
+t 769 left
+t 773 left
+t 778 left
+t 782 down
+t 785 quit

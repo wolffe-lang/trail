@@ -414,7 +414,7 @@ fn projected_tail(s: State) -> Wolf {
 }
 
 /// Launch visibly on the nearest seeded edge, aiming at the projected tail
-/// if current heading, length and pace persist. The aim is never retargeted.
+/// if the current heading persists, including seeded growth. Aim never retargets.
 pub fn begin_eagle(mut s: State) {
     let toss = random(mut s.rng)
     let aim = projected_tail(s)

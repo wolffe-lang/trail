@@ -1,0 +1,8 @@
+pk 1
+seed 7
+tier rich
+size 80x24
+# frames 150 every 150
+# Explicit eagle launch; impact is ordinary simulation, no forced catch.
+t 0 scene 13
+t 135 up

@@ -1,0 +1,32 @@
+tick 780 age 780 phase 1 score 1300 length 14 longest 14 pending 0 eaten 13 survived 0 strikes 0 dodges 0 caught 0 roll 0 eagle_age 82 scatter_age 0
+wrap 3 1 2 1
+wolf 26 1 3
+gait 0 133
+wolf 27 1 3
+gait 1 140
+wolf 0 1 3
+gait 2 116
+wolf 1 1 3
+gait 3 119
+wolf 2 1 3
+gait 4 114
+wolf 3 1 3
+gait 5 82
+wolf 4 1 3
+gait 6 87
+wolf 5 1 3
+gait 7 71
+wolf 6 1 3
+gait 8 55
+wolf 7 1 3
+gait 9 51
+wolf 8 1 3
+gait 10 42
+wolf 9 1 3
+gait 11 34
+wolf 10 1 3
+gait 12 34
+wolf 11 1 3
+gait 13 24
+meat 25 1
+meat 19 4

@@ -97,10 +97,6 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
         let x = left + s.eagle_px * sprites.CELL_SPAN / 256 + 3
         let y = top + s.eagle_py * sprites.CELL_SPAN / 256 + 3
         sprites.shadow(mut g, y + 1, x - 2, t)
-        sprites.eagle(mut g, y - 1, x - 3, s.eagle_distance, t)
-        if s.carried {
-            sprites.wolf(mut g, y - 2, x - 3, s.taken.heading, s.taken_gait, false, false, t)
-        }
     }
     var i = if s.death == 0 then s.length - 1 else -1
     while i >= 0 {
@@ -140,8 +136,26 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
         let w = copy s.scatter[k]
         let x = left + w.x * sprites.CELL_SPAN / 256
         let y = top + w.y * sprites.CELL_SPAN / 256
-        sprites.wolf(mut g, y, x, w.heading, w.distance / 256, k == 0, false, t)
-        if s.death == 2 { sprites.eagle(mut g, y - 1, x, s.eagle_distance, t) }
+        if s.death == 2 { sprites.shadow(mut g, y + 4, x + 1, t) }
+        sprites.wolf(
+            mut g,
+            y + (if s.death == 2 then 1 else 0),
+            x,
+            w.heading,
+            w.distance / 256,
+            k == 0,
+            false,
+            t,
+        )
+        if s.death == 2 { sprites.eagle(mut g, y + 2, x, s.eagle_distance, t) }
+    }
+    if s.eagle_age >= 0 && s.death == 0 {
+        let x = left + s.eagle_px * sprites.CELL_SPAN / 256 + 3
+        let y = top + s.eagle_py * sprites.CELL_SPAN / 256 + 3
+        if s.carried {
+            sprites.wolf(mut g, y - 2, x - 3, s.taken.heading, s.taken_gait, false, false, t)
+        }
+        sprites.eagle(mut g, y - 1, x - 3, s.eagle_distance, t)
     }
     let bg = if t == tier.PLAIN then 0 else 52
     draw.fill(mut g, 0, 0, 1, cols, grid.cell(32, 7, bg, 0))
@@ -214,6 +228,7 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
                 cause,
                 "Score {s.score}   Longest trail {s.longest}",
                 "Eagles survived {s.survived} / {s.strikes} strikes",
+                "Dodged {s.dodges}   Caught {s.caught}",
                 "Last 16 rolls:{history}",
                 "Enter or any key retries. q / Esc quits.",
             ],

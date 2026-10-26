@@ -1,5 +1,5 @@
-//! Seven-column body bar and four separated leg columns. The north/south
-//! construction is quarter-turned, not compressed into the old blob.
+//! East/west profile, supplied top-down north and generated south, plus
+//! the supplied distance-driven eagle wings. Collision envelope stays 7x7.
 
 use grid
 use tier
@@ -13,7 +13,7 @@ pub fn leg_phase(distance: int) -> int { distance % 4 }
 /// Tail sway spans two complete contact strides.
 pub fn tail_phase(distance: int) -> int { distance / 4 % 2 }
 
-/// East/west width seven, north/south width three.
+/// East/west width seven, north/south width five.
 pub fn width(heading: int) -> int { if heading <= 2 then 5 else 7 }
 
 /// East/west height three, north/south height seven.
@@ -149,7 +149,7 @@ pub fn wolf_cell(x: int, y: int, heading: int, distance: int, t: int) -> int {
 }
 
 /// Draw centred in a seven-by-seven logical cell; the sheet itself is 7x3
-/// east/west or 3x7 north/south. Leader stays brighter/bold, newcomers gold.
+/// east/west or 5x7 north/south. Leader stays brighter/bold, newcomers gold.
 pub fn wolf(
     mut g: grid.Grid,
     row: int,
