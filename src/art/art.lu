@@ -97,7 +97,7 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
         let x = left + s.eagle_px * sprites.CELL_SPAN / 256 + 3
         let y = top + s.eagle_py * sprites.CELL_SPAN / 256 + 3
         sprites.shadow(mut g, y + 1, x - 2, t)
-        sprites.eagle(mut g, y - 1, x - 3, t)
+        sprites.eagle(mut g, y - 1, x - 3, s.eagle_distance, t)
         if s.carried {
             sprites.wolf(mut g, y - 2, x - 3, s.taken.heading, s.taken_gait, false, false, t)
         }
@@ -141,7 +141,7 @@ pub fn frame(s: sim.State, cols: int, rows: int, t: int) -> grid.Grid {
         let x = left + w.x * sprites.CELL_SPAN / 256
         let y = top + w.y * sprites.CELL_SPAN / 256
         sprites.wolf(mut g, y, x, w.heading, w.distance / 256, k == 0, false, t)
-        if s.death == 2 { sprites.eagle(mut g, y - 1, x, t) }
+        if s.death == 2 { sprites.eagle(mut g, y - 1, x, s.eagle_distance, t) }
     }
     let bg = if t == tier.PLAIN then 0 else 52
     draw.fill(mut g, 0, 0, 1, cols, grid.cell(32, 7, bg, 0))
@@ -259,7 +259,32 @@ pub fn study_props(seed: int, cols: int, rows: int, t: int) -> grid.Grid {
     text(mut g, 1, 2, "TRAIL / meat, eagle and sliding shadow / {tier.name(t)}", t, true)
     text(mut g, 5, 2, "meat       eagle          shadow", t, false)
     sprites.meat(mut g, 8, 3, t)
-    sprites.eagle(mut g, 8, 16, t)
+    sprites.eagle(mut g, 8, 16, 0, t)
     sprites.shadow(mut g, 9, 34, t)
+    g
+}
+
+/// The supplied up/level/down/level eagle sheet, four quarter-cell phases.
+pub fn study_eagle(seed: int, cols: int, rows: int, t: int) -> grid.Grid {
+    var g = floor(seed, cols, rows, t)
+    text(mut g, 1, 1, "TRAIL / eagle: up, level, down, level / {tier.name(t)}", t, true)
+    for f in 0..4 {
+        let x = 3 + f * 18
+        text(mut g, 4, x, "flap {f}", t, false)
+        draw.fill(
+            mut g,
+            5,
+            x - 1,
+            5,
+            9,
+            grid.cell(
+                if t == tier.PLAIN then 46 else 183,
+                if t == tier.PLAIN then 3 else 94,
+                if t == tier.PLAIN then 0 else 52,
+                0,
+            ),
+        )
+        sprites.eagle(mut g, 6, x, f * 64, t)
+    }
     g
 }

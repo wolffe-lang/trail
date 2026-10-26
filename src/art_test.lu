@@ -131,3 +131,24 @@ fn test_top_down_legs_both_sides_and_head_front() {
         assert(sprites.mask_at(1, 0, 1, phase) == 14 && sprites.mask_at(3, 0, 1, phase) == 13)
     }
 }
+
+fn test_eagle_supplied_wings_and_flap_distance() {
+    let up = ["▖·····▗", "·▙·█·▟·", "··▀█▀··"]
+    let level = ["·······", "▄▄▄█▄▄▄", "···█···"]
+    let down = ["·······", "·▛·█·▜·", "▘··█··▝"]
+    for phase in 0..4 {
+        let rows = if phase == 0 then copy up else if phase == 2 then copy down else copy level
+        for y in 0..3 {
+            var x = 0
+            for ch in rows[y].chars() {
+                let want = if ch == '·' then 0 else ch as int
+                assert(sprites.eagle_cell(x, y, phase * 64, tier.RICH) == want)
+                assert((sprites.eagle_cell(x, y, phase * 64, tier.PLAIN) == 0) == (want == 0))
+                x += 1
+            }
+        }
+        assert(sprites.eagle_phase(phase * 64) == phase)
+        assert(sprites.eagle_phase(phase * 64 + 63) == phase)
+    }
+    assert(sprites.eagle_phase(256) == 0)
+}

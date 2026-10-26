@@ -199,25 +199,45 @@ pub fn meat(mut g: grid.Grid, row: int, col: int, t: int) {
     }
 }
 
-/// Spread-wing eagle, seven by three, over the floor (not a cursor glyph).
-pub fn eagle(mut g: grid.Grid, row: int, col: int, t: int) {
+/// Four flap phases per cell flown (up, level, down, level), from distance.
+pub fn eagle_phase(distance: int) -> int { distance / 64 % 4 }
+
+/// Supplied seven-by-three wing construction, same footprint in plain.
+pub fn eagle_cell(x: int, y: int, distance: int, t: int) -> int {
+    let phase = eagle_phase(distance)
+    let pose = if phase == 3 then 1 else phase
+    var m = 0
+    if pose == 0 {
+        if y == 0 { m = if x == 0 then 4 else if x == 6 then 8 else 0 }
+        if y == 1 { m = if x == 1 then 13 else if x == 3 then 15 else if x == 5 then 14 else 0 }
+        if y == 2 { m = if x == 3 then 15 else if x == 2 || x == 4 then 3 else 0 }
+    } else if pose == 1 {
+        if y == 1 { m = if x == 3 then 15 else 12 }
+        if y == 2 && x == 3 { m = 15 }
+    } else {
+        if y == 1 { m = if x == 1 then 7 else if x == 3 then 15 else if x == 5 then 11 else 0 }
+        if y == 2 { m = if x == 0 then 1 else if x == 3 then 15 else if x == 6 then 2 else 0 }
+    }
+    if m == 0 { return 0 }
+    if t == tier.RICH { return glyph(m) }
+    if x == 3 { return 124 }
+    if pose == 1 || pose == 0 && y == 2 { return 45 }
+    if pose == 0 { return if x < 3 then 92 else 47 }
+    if x < 3 then 47 else 92
+}
+
+/// Draw the actual distance-driven wing pose, not a generic silhouette.
+pub fn eagle(mut g: grid.Grid, row: int, col: int, distance: int, t: int) {
     for y in 0..3 {
         for x in 0..7 {
-            let visible = y == 0 && (x == 0 || x == 6 || x == 3) ||
-                y == 1 && x >= 0 && x <= 6 ||
-                y == 2 && x >= 2 && x <= 4
-            if visible {
+            let cp = eagle_cell(x, y, distance, t)
+            if cp != 0 {
                 let old = grid.at(g, row + y, col + x)
                 grid.put(
                     mut g,
                     row + y,
                     col + x,
-                    grid.cell(
-                        if t == tier.PLAIN then 35 else 9604,
-                        if t == tier.PLAIN then 15 else 223,
-                        old.bg,
-                        grid.ATTR_BOLD,
-                    ),
+                    grid.cell(cp, if t == tier.PLAIN then 15 else 223, old.bg, grid.ATTR_BOLD),
                 )
             }
         }

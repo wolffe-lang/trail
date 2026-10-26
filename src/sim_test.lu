@@ -365,3 +365,9 @@ fn test_predictive_aim_includes_seeded_meals_and_arrivals() {
     while s.strikes == 0 && s.phase == 1 && ticks < 151 { sim.step(mut s, List[int]()); ticks += 1 }
     assert(s.eaten >= 1 && s.length >= 1 && s.caught == 1 && !s.last_dodged)
 }
+
+fn test_dodges_consume_no_roll_even_in_a_long_stream() {
+    var seed: int = 8
+    for _n in 0..10000 { assert(sim.roll_for_catch(mut seed, false) == 0) }
+    assert(seed == 8)
+}

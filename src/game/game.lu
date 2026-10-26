@@ -297,6 +297,10 @@ fn study_run(o: Options) -> int {
                         return 2
                     }
                 }
+                let eagle = art.study_eagle(o.seed, size, if size == 80 then 24 else 60, t)
+                headless.write_frame(o.dump, "eagle-{size}-{tier.name(t)}", eagle) else |_| {
+                    return 2
+                }
                 let props = art.study_props(o.seed, size, if size == 80 then 24 else 60, t)
                 headless.write_frame(o.dump, "props-{size}-{tier.name(t)}", props) else |_| {
                     return 2
@@ -322,6 +326,9 @@ fn bench_run(o: Options) -> int {
             // Different bounded moving scene each frame, including twenty wolves.
             s.wolves[s.front].heading = if i % 2 == 0 then 4 else 1
             s.eagle_age = i % 29
+            s.eagle_distance = i * 64
+            s.eagle_px = s.eagle_x * 256
+            s.eagle_py = s.eagle_y * 256
             for k in 0..s.length { s.gaits[k] = i }
             let start = clock.now_ns()
             let next = art.frame(s, o.cols, o.rows, o.glyph_tier)
