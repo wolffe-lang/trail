@@ -1,0 +1,19 @@
+trail: verified score 100
+tick 79 age 78 phase 1 score 100 length 2 longest 2 pending 0 eaten 1 survived 0 strikes 0 dodges 0 caught 0 roll 0 eagle_age -1 scatter_age 0
+wrap 0 0 0 1
+wolf 4 1 4
+gait 0 10
+wolf 3 1 4
+gait 1 23
+meat 4 0
+trail: verified score 100
+tick 95 age 94 phase 1 score 100 length 2 longest 2 pending 0 eaten 1 survived 0 strikes 0 dodges 0 caught 0 roll 0 eagle_age -1 scatter_age 0
+wrap 0 1 0 0
+wolf 22 0 2
+gait 0 12
+wolf 22 7 2
+gait 1 14
+meat 7 0
+trail: verified score 1200
+tick 728 age 727 phase 1 score 1200 length 12 longest 12 pending 1 eaten 12 survived 0 strikes 0 dodges 0 caught 0 roll 0 eagle_age 29 scatter_age 0
+wrap 3 1 1 1

@@ -36,28 +36,63 @@ member and cannot be reaped while approaching or waiting. Runner storage
 is bounded by the board area; a saturated runner queue drops a further
 summon rather than allocating without limit.
 
-## Eagles
+## Slower, dodgeable eagles
 
-The first eagle is scheduled when the third wolf joins. Its delay is
-`max(6, 12 + seeded(0..8) - length/3)` seconds. Every subsequent strike
-schedules the next with the current length, even if it has fallen below
-three. The shadow approaches the current tail over 30 ticks, tracking its
-position. At tick 30 the eagle rolls; it exits over another 18 ticks.
+The first eagle is scheduled when the third wolf joins. Its delay remains
+`max(6, 12 + seeded(0..8) - length/3)` seconds. A new attempt waits until
+the previous eagle has exited as well as its cadence deadline.
 
-The independent Park–Miller strike stream uses seed modulo 2147483646,
-plus one, multiplier 48271 and modulus 2147483647. Rejection of the top six
-outcomes gives an unbiased d20. **1–7 hits: fixed 35%.** Neither length nor
-score changes those odds. A hit removes only the deque's tail. Removing
-the only wolf ends the run, even if a newcomer is still approaching. A
-miss is one eagle survived and 25 points. The HUD displays the last roll,
-threshold and fixed odds, including at the minimum size.
+An approach flies at **60% of the leader's current speed**, updated every
+tick. If pace is q quarter-cells/second, a leader moves q/120 cells/tick;
+the eagle moves q/200. Its complete approach is twelve cells long, so even
+the maximum pace needs **60 ticks after the first visible launch frame**.
+The launch cell is visibly on the nearest seeded edge, not offscreen.
+A boundary out-and-back lead-in supplies the extra distance before the
+final line to the target; it is moving, not hovering. This makes the full
+two-second warning possible even on a short field.
 
-The death card gives the cause, score, longest pack, survived/strike counts
-and the most recent sixteen rolls. The complete history is reproducible
-from the replay. Enter, Space, an arrow or `r` dismisses either card; arrows also choose
-the first heading and Space does not pause on dismissal. Quit and interrupt
-leave without starting. A death-card key retries the original seed and initial board, retaining
-the replay's monotonically increasing tick count.
+At launch a scratch copy of the pure simulation projects the last wolf's
+position if the current heading continues. It uses the same movement helper,
+seeded meat placement, pending arrivals and pace changes, not a guessed
+constant-length extrapolation. The visible aim is then locked. At impact:
+- Tail outside that logical strike cell: **certain dodge, no d20 drawn**,
+  HUD `eagle: dodged`, one survival and 25 points.
+- Tail in that cell: a fair seeded d20; **1–7 hits, fixed 35%**, unchanged
+  by length or score. A caught miss earns one survival and 25 points.
+
+The independent Park–Miller stream uses normalised seed plus one,
+multiplier 48271, modulus 2147483647 and rejection of its six unused
+outcomes. Dodges consume none of that roll stream or roll history. The
+10,000 caught-roll witness measures 3403 hits (34.03%). A scripted turn
+two cells before impact dodges without advancing the stream; an unchanged
+heading is caught, including seeded growth during the approach.
+
+| fixed trail length | leader speed | eagle speed | visible approach |
+|---|---|---|---|
+| 1 | 4 cells/s | 2.4 cells/s | 150 ticks / 5.0 s |
+| 8 | 5.75 cells/s | 3.45 cells/s | 105 ticks / 3.5 s |
+| 16 | 7.75 cells/s | 4.65 cells/s | 78 ticks / 2.6 s |
+| 25+ | 10 cells/s | 6 cells/s | 60 ticks / 2.0 s |
+
+The exit continues at 60% pace toward the opposite edge. A hit carries the
+taken wolf; if it was the only wolf, its departure is shown for the same
+one-second death animation before the card, without teleporting it away.
+
+## A real scatter before the card
+
+Self-collision starts a **30-tick** scatter, not an immediate modal. Every
+wolf, including the leader, chooses a direction away from the collision
+point with seeded tie-breaking and a seeded 4–7 cells/s speed. They stop
+at the field bound instead of wrapping; gait follows actual distance.
+The HUD says `the pack scatters`. Only after all 30 ticks does the death
+card appear. The last-wolf eagle death uses a moving carry-away instead.
+
+During either death animation only quit/interrupt is acted on; a start,
+arrow, r or Space cannot skip it. The card gives the cause, score, longest
+pack, attempts/survivals, dodged/caught counts and latest sixteen caught
+rolls. Enter, Space, an arrow or r retries the same seed after the card.
+The replay tick counter remains monotonic. Space still pauses normal
+play, including eagle flight and newcomer approach.
 
 ## Window changes and terminal lifecycle
 
@@ -78,8 +113,8 @@ all use that restore. SIGKILL and machine loss cannot restore a terminal.
 The rich/plain simulation is identical. Unit tests cover every rule;
 black-box tests check the built executables' state, not just golden bytes.
 Rare visual states use explicit `scene` replay fixtures. A separate,
-ordinary-key 728-tick run collects 12 meals, reaches 12 wolves, receives
-the first eagle hit and verifies score 1200. Two actual pty recordings
+ordinary-key 786-tick run collects 14 meals, reaches 14 wolves, dodges
+the first eagle without a roll and verifies score 1425. Two actual pty recordings
 each verify score 100. Fixture files are not recordings.
 
 These are the initial values from 2026-10-25. Pace, meat count and cadence
@@ -88,21 +123,21 @@ settled rules. Play can tune the former without quietly changing the latter.
 
 ## Distance-driven gait (2026-10-25 play revision)
 
-The sprite occupies a 7x3 or quarter-turned 3x7 sheet inside a 7x7 logical
+The sprite occupies a 7x3 east/west or 5x7 north/south sheet inside a 7x7 logical
 collision envelope; the rule remains one occupied logical cell per wolf. Each
 pack member has a separate travelled-cell counter incremented only after
 a successful cell move, including a seam crossing. Its leg phase is
-distance modulo four; its tail phase is floor(distance / four) modulo
-two. Newcomers accumulate actual approach distance in 1/256-cell units
+distance modulo four. East/west tails sway over a stride pair; the supplied
+north tail alternates its two quarter-cell positions with the contact phase. Newcomers accumulate actual approach distance in 1/256-cell units
 and retain its whole-cell component when they join. Pause advances none
-of these counters or approach positions. The body uses the same original
-turned mask in every heading, with long torso, forward head/ears and tail.
+of these counters or approach positions. East/west keep the profile; north is top-down with legs on both sides,
+and south is generated by vertically mirroring north.
 
 ## Four-leg geometry revision, 2026-10-25
 
 Four separated one-cell leg columns require seven columns, since three
 whole floor cells separate them. East/west therefore use a 7x3 sheet;
-north/south use the same construction quarter-turned to 3x7. Every logical
+north/south now use the supplied 5x7 top-down construction. Every logical
 cell reserves 7x7, so a perpendicular neighbour cannot overlap it. This
 changes field capacity and seeded meat placement, not self-collision, wrap
 or eagle odds. The 40x16 minimum holds two such rows plus the HUD/control

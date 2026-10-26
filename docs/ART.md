@@ -6,60 +6,71 @@ the earth tones, while its cell hash scatters large rocks (3%), smaller
 clods (6%), flecks (25%) and fine grit. The seed is normalised before it
 reaches the engine's hash, including for signed 64-bit seed extremes.
 
-## Wolves
+## North and south
 
-The rich east-facing construction is seven columns by three rows. Its
-central five-cell body is a solid horizontal bar with a straight back and
-belly. A head block projects at the front with a missing upper quadrant
-for an ear notch; the tail is one quarter-block stroke behind the body.
-The four legs are **separate full-height half-cell columns** at columns
-0, 2, 4 and 6, with a complete floor cell between each. No contact pose
-hides or merges two of them. A narrow hip joins the rear leg to the bar.
+North is the supplied 5x7 top-down rectangle: ear corners and head above,
+a one-cell neck, a three-cell-wide solid torso, two legs on each side and
+the tail below. Phases are pair A forward, level, pair B forward, level;
+level deliberately repeats. South is generated from north by reversing
+row order and vertically reflecting each cell's quadrant bits. No second
+south drawing is stored. The head becomes `▜█▛` at the bottom; the tail's
+exact reflected phases are `▖` and `▗` at the top.
 
-West mirrors the complete east sheet. North and south quarter-turn the
-same cells and each cell's quadrants, producing a three-column by seven-row
-sheet; they are not squashed versions or unrelated poses. Every heading
-is centred in a **7x7 logical collision cell**. This prevents overlap when
-neighbours turn perpendicular to one another. The former 5x3 footprint
-cannot hold four separated columns, and a 7x3 envelope cannot contain its
-own literal quarter-turn. This geometry requires a 40x16 minimum to retain
-two logical board rows; 80x24 and 200x60 remain supported.
+East/west retain the previous 7x3 profile and separated leg columns.
+All headings remain centred in the same 7x7 collision cell; minimum 40x16
+and field capacities are unchanged. Leader bright/bold, followers grey
+and newcomers gold remain distinct. Gait advances per cell moved; pause
+freezes it. Plain north uses # torso, ^ head, | level legs and apostrophe/
+comma forward/back legs; south mirrors the construction with a v head.
 
-Four contact phases alternate the diagonal pairs: front-left with
-back-right, then front-right with back-left. Each foot sweeps between the
-left and right half of its own column, retaining the full-height stem
-throughout. Both diagonal-pair and four-distinct-frame assertions are
-independent of the golden bytes. Distance, not ticks, advances each wolf's
-phase. The tail changes side once per pair of strides; pausing freezes
-all contact/tail phases and the newcomer's approach. Arriving wolves use
-the same construction and retain their distance-driven phase on joining.
+## Eagles and the floor shadow
 
-The leader stays bright/bold, followers grey and arrivals gold. Plain has
-exactly the same cell occupancy, orientation and four phases: `#` for the
-body and planted contact, `|` for the other contact, `.` for the tail.
-Separate foreground/background styles keep its tail distinct from soil.
-All sheets and drawing code are original work.
+The supplied 7x3 eagle has a central body column, a head above the body,
+and wings up, level, down, level. Four indexed flap phases make one cycle
+per cell flown, using quarter-cell distance, not time. Level intentionally
+repeats. Plain keeps the footprint with diagonal wing strokes, - level
+wings and | body. The dim floor diamond is unchanged. Shadows draw below
+wolves, the flying eagle above them; a taken wolf hangs below the eagle.
+Meat stays two solid red cells.
 
-## Meat, eagle and shadow
+## Study and motion scenes
 
-Meat is two full red blocks, `##` in the plain tier. The eagle is a
-seven-by-three spread-wing silhouette, pale against the dark earth so the
-telegraph remains readable. Its dim five-by-three diamond shadow slides
-from an edge towards the tail for a full second. Both tiers use the same
-positions and masks. A miss continues beyond the opposite edge; a hit
-shortens the pack before the eagle exits. The title and death cards share
-the floor's palette, with different original text.
+The study includes every wolf heading/phase on both tiers at both sizes,
+props companions, and an eagle-flap sheet for each tier/size. It uses simple
+marked soil patches so limbs and wings can be counted; the live field
+retains the full seeded soil scatter.
 
-## Study and goldens
+`tools/sprite-frames.py` extracts these literal cells from the committed
+sheets. Middle dots below are floor. Mirror, side-leg/head, literal-sheet
+and flap-distance tests are independent of golden bytes. Goldens also
+show middle scatter/carry-away, the delayed card, an actual positional
+dodge and a caught strike. Fixture launches are disclosed; their impacts
+are decided by the normal simulation.
 
-`target/trail --art-study --dump target/study` writes one contact sheet
-per heading, tier and field size (16 sheets), plus four props companions.
-Each contact sheet shows the four phases across one row and the opposite
-tail sway below. A simple marked soil patch, rather than scattered rocks,
-lets the eye count all four legs. The game still uses the full soil floor.
+### Rich contact sheets
 
-`tools/sprite-frames.py` extracts the actual rich/plain contact cells from
-the committed sheets for review, not a hand-drawn approximation. Mid-stride
-goldens cover every heading at both sizes and tiers. Geometry tests pin the
-straight body bar, four separated leg columns, head notch, tail, diagonal
-pairs, exact tier occupancy and the quarter-turned collision envelope.
+```
+NORTH  phase 0 / phase 1 / phase 2 / phase 3
+·▟█▙·   ·▟█▙·   ·▟█▙·   ·▟█▙·
+··█··   ··█··   ··█··   ··█··
+▘███▖   ▌███▐   ▖███▘   ▌███▐
+·███·   ·███·   ·███·   ·███·
+▖███▘   ▌███▐   ▘███▖   ▌███▐
+·███·   ·███·   ·███·   ·███·
+··▘··   ··▝··   ··▘··   ··▝··
+
+SOUTH  phase 0 / phase 1 / phase 2 / phase 3
+··▖··   ··▗··   ··▖··   ··▗··
+·███·   ·███·   ·███·   ·███·
+▘███▖   ▌███▐   ▖███▘   ▌███▐
+·███·   ·███·   ·███·   ·███·
+▖███▘   ▌███▐   ▘███▖   ▌███▐
+··█··   ··█··   ··█··   ··█··
+·▜█▛·   ·▜█▛·   ·▜█▛·   ·▜█▛·
+
+EAGLE up / level / down / level
+▖·····▗   ·······   ·······   ·······
+·▙·█·▟·   ▄▄▄█▄▄▄   ·▛·█·▜·   ▄▄▄█▄▄▄
+··▀█▀··   ···█···   ▘··█··▝   ···█···
+
+```

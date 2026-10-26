@@ -36,3 +36,9 @@ CSI-u sequences such as ESC [ 13 u but drops them. CSI-u Enter, arrows,
 Escape and Space need mapping to the same keys as their legacy forms in
 lair. This game does not enable a keyboard protocol or patch the engine;
 that input path remains unsupported until an engine fix is pinned.
+
+During the thirty-tick scatter/carry-away, arrows, Space, Enter and r do
+not skip the animation; q/Escape/Ctrl-C still leave. The death card then
+accepts the usual mapped keys. To dodge an approaching eagle, turn before
+its locked aim cell is struck: a tail outside the cell is a certain miss
+and does not draw a d20. The unchanged heading is predictable to the eagle.
