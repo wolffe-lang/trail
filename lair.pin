@@ -1,7 +1,10 @@
-57870143ebbb4806b8bee40379e8c6e781f50842
+df11d213785f7694bdf3f3572299abc550d8b903
 # lair.pin — the engine's commit (wolffe-lang/lair), the first line, forty
 # hex digits. tools/fetch-lair stages that tree into .lair/ and the engine's
 # tools (.lair/tools/*) refuse any other; src/<module> symlinks point into
 # it. Moved by a lane that re-pins, with the goldens re-run on both hosts.
 #
 # tr00 (2026-10-25): lair trunk 5787014, read twice; game-owned 40x12 opener.
+# r41q (2026-11-01): lair trunk df11d213, read twice; lr03's held keys,
+# lr04's control grammar and the engine's wolf 0.2.36 / lupin 0.1.58 pin;
+# the goldens re-run on Linux here and on macOS in tier full.
