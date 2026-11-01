@@ -78,7 +78,7 @@ container (podman by default; `LAIR_ENGINE=docker` for Docker).
 appropriate; coordinate the host's lock before using it. The CI PR tier
 runs Linux; the full tier adds macOS and performance.
 
-There are 77 checked unit tests including the pinned engine, 41 cases on
+There are 92 checked unit tests including the pinned engine, 41 cases on
 both tiers plus the art directory (83 golden directories), thirteen pty rows,
 and executable-level gameplay checks on both compiler backends. Two real
 pty recordings each pin score 100; an ordinary-key 14-meal/14-wolf dodge
