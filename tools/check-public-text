@@ -189,7 +189,7 @@ def write_baseline(counts):
 
 
 def token_class(word, letters, digits, conf):
-    if word in ALLOW_WORDS or conf.allows(word) or (len(word) >= 7 and HEXWORD.fullmatch(word)):
+    if word in ALLOW_WORDS or conf.allows(word):
         return None
     if len(letters) == 1:
         if letters == "s" and len(digits) >= 2:
