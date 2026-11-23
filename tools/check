@@ -2,6 +2,8 @@
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
+python3 -I tools/check-public-text --self-test
+python3 -I tools/check-public-text
 .lair/tools/check
 .lair/tools/goldens --bin target/native/trail
 python3 -I tools/gameplay.py --bin target/native/trail
