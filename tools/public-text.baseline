@@ -1,0 +1,5 @@
+# public-text baseline: known internal references, per file, as counts of word digests.
+# It may only shrink. After a cleanup: python3 -I tools/check-public-text --shrink
+1	9c5646b582f1	.github/workflows/ci.yml
+1	b684e5a7d576	.github/workflows/ci.yml
+2	b3c56dd2dd89	tools/fetch-lair
