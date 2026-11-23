@@ -89,3 +89,5 @@ and the PAX installer remain follow-on work.
 
 See [design](docs/DESIGN.md), [art](docs/ART.md), [glyphs](docs/GLYPHS.md),
 [palette](docs/PALETTE.md), [keys](docs/KEYS.md) and [replay](docs/REPLAY.md).
+
+A planted line for the public-text check: qz97.
